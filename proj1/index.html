@@ -44,22 +44,22 @@
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/image1.png" align="middle" width="400px"/>
+        <img src="images/image1.png" align="middle" width="500px"/>
         <figcaption align="middle">Caption goes here.</figcaption>
       </td>
       <td>
-        <img src="images/image2.png" align="middle" width="400px"/>
+        <img src="images/image2.png" align="middle" width="500px"/>
         <figcaption align="middle">Caption goes here.</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/image3.png" align="middle" width="400px"/>
+        <img src="images/image3.png" align="middle" width="500px"/>
         <figcaption align="middle">Caption goes here.</figcaption>
       </td>
       <td>
-        <img src="images/image4.png" align="middle" width="400px"/>
+        <img src="images/image4.png" align="middle" width="500px"/>
         <figcaption align="middle">Caption goes here.</figcaption>
       </td>
     </tr>
@@ -89,22 +89,22 @@
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/rotate_head.jpeg" align="middle" width="400px"/>
+        <img src="images/rotate_head.jpeg" align="middle" width="500px"/>
         <figcaption align="middle">Figure rotate head</figcaption>
       </td>
       <td>
-        <img src="images/rotate_left_arm.jpeg" align="middle" width="400px"/>
+        <img src="images/rotate_left_arm.jpeg" align="middle" width="500px"/>
         <figcaption align="middle">Figure rotate right arm</figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/rotate_right_arm.jpeg" align="middle" width="400px"/>
+        <img src="images/rotate_right_arm.jpeg" align="middle" width="500px"/>
         <figcaption align="middle">Figure rotate left arm</figcaption>
       </td>
       <td>
-        <img src="images/my_robot.png" align="middle" width="400px"/>
+        <img src="images/my_robot.png" align="middle" width="500px"/>
         <figcaption align="middle">Figure my_robot.svg render output</figcaption>
       </td>
     </tr>
@@ -114,19 +114,241 @@
 <h2 align="middle">Section II: Sampling</h2>
 
 <h3 align="middle">Part 4: Barycentric coordinates</h3>
+<p>
+  The barycentric coordinate is a “type of coordinate” system (just like the x y coordinate we commonly use) 
+  that is commonly used in triangles to interpolate values (e.g., coordinate, normal, color) 
+  inside a triangle with a triangle’s vertex value. For a given point in the triangle represented by (alpha, beta, gamma), 
+  its value is the weighted sum of its vertex value, where the weight is barycentric coordinate. 
+  The mathematical formula for the weighted sum is val(point in triangle) = val(A) * alpha + val(B) * beta + val(C) * gamma. 
+</p>
+<p>
+  To derive a point’s barycentric coordinate using its (x, y) coordinate (as showned in figure below),
+  we compute the point distance to an edge and its corresponding vertex. 
+  This can be considered “how far a point is to vertex inside the triangle.” 
+  For points that are closer to a particular vertex, their value should be relative to that vertex. 
+</p>
 
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/xy_to_barycentric.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure Compute Barycentric Coordinate with XY Coordinate</figcaption>
+      </td>
+    </tr>
+    <br>
+  </table>
+</div>
+
+<p>
+  We use below color triangle below to explain how barycentric coordinates are used to interpolate the value given triangle vertex. 
+  The triangle is drawn by assigning three vertexes to take red, green, and blue colors. 
+  The color inside the triangle is a weighted sum of three vertexes. 
+  As can be seen from the graph, points close to vertex have a closer color as vertex color.
+</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/rasterize_color_triangle.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure Rasterized Triangle to Explain Barycentric Coordinate</figcaption>
+      </td>
+      <td>
+        <img src="images/svg_basic_test7.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure svg/basic/test7.svg render output</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<p>
+  Pixel sampling is used when mapping one discrete coordinate space value to another discrete coordinate space 
+  given some contiguous transformation between the two coordinates space. 
+  Since the transformation is contiguous, the mapped point on other coordinate space is also contiguous, 
+  leading to the problem of “estimating value for a contiguous location under a discrete coordinate”. 
+  If the mapped coordinate space is also contiguous (e.g., a contiguous function map 2d location to value exist), 
+  we can use its value directly without a sample. One example of that is texture mapping, 
+  where we map the screen space (discrete) to texture space (discrete) through the texture lookup function (contiguous transformation). 
+</p>
+<p>
+  In the nearest neighbor sample, we “estimate” the value for a contagious location using its closest discrete location in 2d. 
+  In the bilinear sample case, we “estimate” value for a contiguous location using a weighted sum of 4 of its closes discrete location, 
+  where the weight is “how close is the contiguous point to the discrete point.” 
+</p>
+<p>
+  In our nearest neighbor sample implementation, we use std::round to find the most relative discrete pixel coordinate of a given contiguous coordinate. 
+  In our bilinear sample implementation, we use std::ceil and std::floor to find the nearest four discrete pixel coordinates 
+  and use a weighted sum of those 4 pixel’s values as sample value. 
+</p>
+<p>
+  The svg/texmap/test1.svg is a case where the bilinear interpolation result outperforms the nearest neighbor result. 
+  In the 1 sample per pixel case, the nearest neighbor sample only has dotted lines on the rendered graph, 
+  whereas the bilinear sample has a more contiguous line. 
+  In the 16 sample per pixel case, the nearest neighbor sample shows a jagged line when zoomed out. 
+  In the bilinear sample case, the white line is less jagged and smooth.
+</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/bilinear_spl1.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure bilinear spl w. sample 1 per pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/bilinear_spl16.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure bilinear spl w. sample 16 per pixel</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/nearest_spl1.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure nearest neighbour spl w. sample 1 per pixel</figcaption>
+      </td>
+      <td>
+        <img src="images/nearest_spl16.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure nearest neighbour spl w. sample 16 per pixel</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
+<p>
+  The nearest neighbor sample commonly runs much faster than the bilinear sample, 
+  making it more widely used to deploy the CV model as an edge device. 
+  The closest neighbor sample takes the neighbor pixel value without blurring, 
+  which better preserves the photo’s sharpness. However, this also leads to more jaggie artifacts, 
+  as shown in the four figures above. The bilinear sample takes a weighted average of 4-pixel points around; 
+  this can be considered as some form of “filtering with sampling.” Since it “blurs out” some high-frequency information during the sample, 
+  bilinear samples tend to have less jagged than the nearest neighbor sample. 
+  Consequently, bilinear samples tend to blur the resulting image and do not present the sharpness of the picture.
+</p>
 
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
 
+  <p>
+    The main idea of the level sample is a downsample the texture space and select a downsampled texture space level 
+    that has a similar resolution as a particular region in your screen space. 
+    The is mainly trying to avoid aliasing issues when sampling at a low rate 
+    (e.g., a small fraction of screen space that only takes 2x2 pixels) 
+    on high-frequency information (e.g., corresponding texture space take 20x20 pixels). 
+  </p>
+  <p>
+    All the below analysis assumes keeping other factors constant and only changing one aspect 
+    (e.g., the level sample can be combined with nearest neighbor sample or bilinear sample, 
+    but we assume the pixel sample method is the same and only consider how to level sample affects the result). 
+    In reality, one can mix supersample with level sample and different pixel sample strategies (nearest or bilinear) 
+  </p>
+<h4>Memory usage</h4>
+  <p>
+    Supersample (sampling multiple locations on 1 pixel) take most of the memory space. 
+    This is because we’re using a sample buffer that linearly scales up as the supersample resolution increase. 
+  </p>
+  <p>
+    Level sample (multimap sample) takes ⅓ more texture space memory since we need to store multiple levels of texture space. 
+    But compared to supersample, the extra memory required by the level sample is small.
+  </p>
+  <p>
+    Bilinear sample leads to 4 times higher bandwidth pressure than the nearest neighbor sample. 
+    This is because we need to access the four closest points in the bilinear sample, and in the most immediate neighbor sample, 
+    we only need to access the nearest point.
+  </p>
+<h4>Speed</h4>
+  <p>
+    supersample (e.g., 4x4 supersample) takes the longest time. This is because we need to sample multiple times for a single pixel.
+  </p>
+  <p>
+    Level sample takes less time than supersampling since it only conducts 1 sample for each pixel. 
+    However, there is an overhead on computing the corresponding mipmap level when using a level sample. 
+  </p>
+  <p>
+    Bilinear sample take longer time than nearest neighbor sample mainly because of the bandwidth issue mentioned above.
+  </p>
 
+<h4>Antialiasing</h4>
+  <p>
+    Supersample provides the best antialiasing effect. 
+    The idea behind a super sample is to sample high-frequency information with a high sample rate (multiples ample for 1 pixel). 
+    Using supersample would preserve the most high-frequency information of the original sample.
+  </p>
+  <p>
+    The level sample provides the second-best antialiasing effect. 
+    The idea behind level sample is to remove high-frequency information and only preserve low-frequency information to 
+    sample low-frequency information with a low sample rate. 
+    Sample without consider level sample is equivalent on sample on level 0.
+  </p>
+  <p>
+    Below graph show rendered result on UMich's EECS building. with svg/texmap/test1.svg
+  </p>
+  <p>
+    As can be seen by comparing Figure 6 (a) with Figure 6 (c), Figure 6 (b) with Figure 6 (d)
+    sample on nearest level instead of level 0 help to alleviate some aliasing effect on the boundary of the rendered image. 
+  </p>
+  <p>
+    Bilinear sample can be considered as “blur when sampling” and provide slightly more antialiasing ability than the nearest neighbor sample.
+    On the other hand, the nearest neighbor sample can preserve a more sharp picture.
+  </p>
+  <p>
+    As can be seen by comparing Figure 6 (a) with Figure 6 (b), Figure 6 (c) with Figure 6 (c) bilinear sample alleviate some aliasing effect compared to nearest neighbour. 
+  </p>
+  <p>
+    The best antialiasing effect is achieve by combining bilinear sample with nearest level map sample.
+  </p>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/level0_bilinear.png" align="middle" width="1000px"/>
+          <figcaption align="middle">Figure 6 (a) : level 0 sample with bilinear</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/level0_nearest.png" align="middle" width="1000px"/>
+          <figcaption align="middle">Figure 6 (b) : level 0 sample with nearest</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/levelnear_bilinear.png" align="middle" width="1000px"/>
+          <figcaption align="middle">Figure 6 (c) : level nearest sample with bilinear</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/levelnear_nearest.png" align="middle" width="1000px"/>
+          <figcaption align="middle">Figure 6 (d) : level neatest sample with nearest</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
 
 <h2 align="middle">Section III: Art Competition</h2>
 <p>If you are not participating in the optional art competition, don't worry about this section!</p>
 
 <h3 align="middle">Part 7: Draw something interesting!</h3>
+
+<h3 align="middle">Appendix</h3>
+
+<a href="https://cal-cs184-student.github.io/sp22-project-webpages-Haohua-Lyu-and-Xiao-Song/">Link to project webpage</a>
 
 </body>
 </html>
