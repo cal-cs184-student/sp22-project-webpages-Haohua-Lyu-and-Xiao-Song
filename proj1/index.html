@@ -185,9 +185,9 @@
 <p>
   The svg/texmap/test1.svg is a case where the bilinear interpolation result outperforms the nearest neighbor result. 
   In the 1 sample per pixel case, the nearest neighbor sample only has dotted lines on the rendered graph, 
-  whereas the bilinear sample has a more contiguous line. 
+  whereas the bilinear sample has a more contiguous line (compare left two figure). 
   In the 16 sample per pixel case, the nearest neighbor sample shows a jagged line when zoomed out. 
-  In the bilinear sample case, the white line is less jagged and smooth.
+  In the bilinear sample case, the white line is less jagged and smooth (compare right two figure).
 </p>
 <div align="middle">
   <table style="width=100%">
@@ -235,6 +235,13 @@
     (e.g., a small fraction of screen space that only takes 2x2 pixels) 
     on high-frequency information (e.g., corresponding texture space take 20x20 pixels). 
   </p>
+  <ol>
+    <li>Compute sample location (x, y); this can be supersampled location</li>
+    <li>Compute (x,y)’s texture space coordinate (u,v)_xy using barycentric coordinate.</li>
+    <li>Compute (x+1, y) and (y, x+1)’s texture space coordinate (u,v)_x+1y, (u,v)xy+1 using barycentric coordinate.</li>
+    <li>Compute Euler distance between (u,v)_xy and (u,v)_x+1y, (u,v)xy+1. Take the larger value. The value here means “how many pixels on texture space correspond to 1 pixel on sample space”.</li>
+    <li>Take log2 on the larger value we just compute, and the result is the corresponding level. The log2 is because the texture space is downsampled with 2x2 on each level.</li>
+  </ol>  
   <p>
     All the below analysis assumes keeping other factors constant and only changing one aspect 
     (e.g., the level sample can be combined with nearest neighbor sample or bilinear sample, 
