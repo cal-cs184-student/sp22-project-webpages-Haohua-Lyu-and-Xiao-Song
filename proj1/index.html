@@ -23,9 +23,9 @@
 
 <body>
 
-<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2018</h1>
+<h1 align="middle">CS 284: Computer Graphics and Imaging, Spring 2022</h1>
 <h1 align="middle">Project 1: Rasterizer</h1>
-<h2 align="middle">YOUR NAME, CS184-??</h2>
+<h2 align="middle">Xiao Song, Haohua Lyu, CS284</h2>
 
 <br><br>
 
@@ -73,7 +73,43 @@
 
 <h3 align="middle">Part 3: Transforms</h3>
 
+<p>
+  In my_robot.svg graph (Figure my_robot.svg render output), we move the cube man to the pose shown in the lecture slides. 
+  The lower part of the right hand is rotated 90 degrees counterclockwise. 
+  The whole left hand is rotated 90 degrees counterclockwise, and the head is rotated 15 degrees counterclockwise. 
+</p>
+<p>
+  In the lecture, we mentioned the idea that rotating around a given point is equivalent to 
+  translating negative distance, doing the rotation, and then translating back. 
+  To properly rotate those body parts, we need to figure out each body part’s correct rotation center (in a relative coordinate system). 
+  Below three graphs below show the three rotations, their relative coordinate system, and its center (in yellow) we want to rotate. 
+</p>
 
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/rotate_head.jpeg" align="middle" width="400px"/>
+        <figcaption align="middle">Figure rotate head</figcaption>
+      </td>
+      <td>
+        <img src="images/rotate_left_arm.jpeg" align="middle" width="400px"/>
+        <figcaption align="middle">Figure rotate right arm</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/rotate_right_arm.jpeg" align="middle" width="400px"/>
+        <figcaption align="middle">Figure rotate left arm</figcaption>
+      </td>
+      <td>
+        <img src="images/my_robot.png" align="middle" width="400px"/>
+        <figcaption align="middle">Figure my_robot.svg render output</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
 
 <h2 align="middle">Section II: Sampling</h2>
 
