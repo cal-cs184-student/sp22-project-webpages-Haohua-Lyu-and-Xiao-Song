@@ -18,6 +18,8 @@
 <title>CS 184 Rasterizer</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 
@@ -34,44 +36,342 @@
   <a href="../index.html"><p align="middle">Back to Homepage</p></a>
 
 <h2 align="middle">Overview</h2>
-<p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+<p>Rasterization is the cornerstone of rendering processes. 
+  In this homework, we implemented a simple rasterizer for drawing triangles, 
+  with support for supersampling, transforms, and texture mapping. 
+  We successfully implemented all features mentioned in the six tasks, 
+  as well as some extra credit features for Task 1 and 2. 
+  In the end, we were able to produce well-rendered images with our rasterizer, 
+  and we gained a solid understanding of the rasterization pipeline.</p>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/basic_test3.png" align="middle" width="500px"/>
+          <figcaption align="middle"><code>basic/test3.svg</code> using our rasterizer.</figcaption>
+        </td>
+        <td>
+          <img src="images/illustration_lion.png" align="middle" width="500px"/>
+          <figcaption align="middle"><code>illustration/05_lion.svg</code> using our rasterizer.</figcaption>
+        </td>
+      </tr>
+      <br>
+      <tr>
+        <td>
+          <img src="images/illustration_sun.png" align="middle" width="500px"/>
+          <figcaption align="middle"><code>illustration/04_sun.svg</code> using our rasterizer.</figcaption>
+        </td>
+        <td>
+          <img src="images/texmap_test1.png" align="middle" width="500px"/>
+          <figcaption align="middle"><code>texmap/test1.svg</code> using our rasterizer.</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
 
 <h2 align="middle">Section I: Rasterization</h2>
 
 <h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
 
-<p>Here is an example 2x2 gridlike structure using an HTML table. Each <b>tr</b> is a row and each <b>td</b> is a column in that row. You might find this useful for framing and showing your result images in an organized fashion.</p>
+<p>In this task, we implemented the <code>rasterize_triangle</code> function to draw triangles on the screen. 
+  We rasterize triangles in the following steps:
+  <ol>
+    <li>
+      Obtain the triangle’s bounding box by finding the maximal and minimal \(x, y\) coordinates, 
+      and then “clamp” the bounding box within the screen boundaries (width and height).
+    </li>
+    <li>
+      Calculate the constants in the line equations, including \(A_i, B_i\), and \(C_i\).
+    </li>
+    <li>
+      For each location in the bounding box, 
+      sample it at the center and evaluate the line equations \(L_0(x + 0.5, y + 0.5)\), 
+      \(L_1(x + 0.5, y + 0.5)\), \(L_3(x + 0.5, y + 0.5)\). 
+      Check if the results share the same sign; 
+      if so, we consider the location is inside the triangle. 
+      We check for identical signs instead of a certain direction to take account of both counter-clockwise and clockwise triangle labeling. 
+      We also allow all boundary conditions to be considered inside the triangle (e.g., count all \(>=\) and \(<=\), 
+      drawing all pixels on edge. 
+    </li>
+    <li>
+      If a point is considered inside the triangle in the previous step, 
+      set the pixel’s color in the sample buffer to be the given color. 
+    </li>
+  </ol>
+    After iterating through all pixels in the bounding box, 
+    we have assigned the color to all points in the triangle and thus rasterized it. 
+    This algorithm is indeed checking each sample within the bounding box 
+    (and hence no worse than it). The results of <code>basic/test4.svg</code> are shown below.
+  </p>
+
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/basic4.png" align="middle" width="500px"/>
+          <figcaption align="middle"><code>basic/test4.svg</code> using code from Task 1.</figcaption>
+        </td>
+        <td>
+          <img src="images/basic4_inspector.png" align="middle" width="500px"/>
+          <figcaption align="middle">
+            <code>basic/test4.svg</code> with inspector highlighting the tip of the red triangle. 
+            Note the jaggies from aliasing.
+          </figcaption>
+        </td>
+      </tr>
+      <br>
+    </table>
+  </div>
+
+<h3 align="middle">Part 1 Extra Credit: Incrementing the Line Equations</h3>
+
+<p>
+  We observed that the line equations \(L_i(x, y) = A_ix + B_iy + C_i\) is linear in \(x\) and \(y\), 
+  respectively. This means that $$L_i(x + 1, y) = A_i(x + 1) + B_iy + C_i = L_i(x, y) + A_i,$$
+  and $$L_i(x, y + 1) = A_ix + B_i(y + 1) + C_i = L_i(x, y) + B_i.$$ 
+  Thus, instead of explicitly calculating the line equations at each point, 
+  we can calculate them at the beginning of the loop and increment by \(A_i\) or \(B_i\), 
+  respectively. This incremental trick can save us much time from repeated multiplication. 
+</p>
+
+<pre><code>
+  // Evaluating the line equation at the starting location
+  int pt[] = { min_x_screen, min_y_screen };
+  float L_0_row = al0 * (pt[0] + 0.5) + bl0 * (pt[1] + 0.5) + cl0;
+  float L_1_row = al1 * (pt[0] + 0.5) + bl1 * (pt[1] + 0.5) + cl1;
+  float L_2_row = al2 * (pt[0] + 0.5) + bl2 * (pt[1] + 0.5) + cl2;
+
+  for (pt[1] = min_y_screen; pt[1] < max_y_screen; pt[1]++)
+  {
+    float L_0 = L_0_row;
+    float L_1 = L_1_row;
+    float L_2 = L_2_row;
+
+    for (pt[0] = min_x_screen; pt[0] < max_x_screen; pt[0]++)
+    {
+      // Pass three line test
+      // Consider boundary as part of triangle as suggested in spec
+      if ((L_0 >= 0 && L_1 >= 0 && L_2 >= 0) ||
+          (L_0 <= 0 && L_1 <= 0 && L_2 <= 0))
+        sample_buffer[pt[1] * width + pt[0]] = color;
+
+        // Increment along the x-axis by a_i
+        L_0 += al0;
+        L_1 += al1;
+        L_2 += al2;
+      }
+      
+      // Increment along the y-axis by b_i
+      L_0_row += bl0;
+      L_1_row += bl1;
+      L_2_row += bl2;
+    }
+  }
+</code></pre>
+
+<p>Performance results are recorded in the following table.</p>
+
+<div align="center">
+  <style type="text/css">
+    .tg  {border-collapse:collapse;border-spacing:0;}
+    .tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+      overflow:hidden;padding:10px 5px;word-break:normal;}
+    .tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+      font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+    .tg .tg-fymr{border-color:inherit;font-weight:bold;text-align:left;vertical-align:top}
+    .tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+    </style>
+    <table class="tg">
+    <thead>
+      <tr>
+        <th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">File name</span></th>
+        <th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Original Task 1</span></th>
+        <th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Task 1, </span><br><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Incremental version</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">basic/test3.svg</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">16.324ms</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">9.7509ms</span></td>
+      </tr>
+      <tr>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">basic/test4.svg</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.5272ms</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.29ms</span></td>
+      </tr>
+      <tr>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">basic/test5.svg</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">1.4411ms</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.6873ms</span></td>
+      </tr>
+      <tr>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">basic/test6.svg</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.9667ms</span></td>
+        <td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.5385ms</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<p>
+  On average, we see a \(45.5%\) increase in speed by implementing this trick. 
+  We also implemented an incremental version for Task 2, 
+  as the supersampling could also benefit from this step. 
+  However, we don’t see such a huge speedup (only \(~10%\) faster for a sampling rate of 16), 
+  potentially due to additional float point multiplications at the sub-pixel level.
+
+</p>
+
+<h3 align="middle">Part 2: Antialiasing triangles</h3>
+<p>
+  In this task, we implemented supersampling for our rasterizer. 
+  The main idea of our supersampling algorithm is to sample more than one location within a pixel and average the color when resolving to the actual frame buffer. 
+  This is to approximate the 1-pixel box filter (convolution) used in antialiasing, 
+  achieving a similar effect of reducing frequencies higher than the Nyquist frequency. 
+  The more sampling taken within the pixel (at proper locations), 
+  the better the approximated average is. 
+  For the data structure, we chose to use a large, higher-resolution sample buffer to store sub-pixel sampling values across different triangles, 
+  and we only average the value when resolving to the frame buffer. 
+  In this way, we avoid the loss of quality when a pixel is evaluated multiple times by different triangles 
+  (i.e., on the border). 
+  This comes with a higher memory cost that grows fast as the sampling rate increases. 
+  We always resize when the sampling rate changes to keep only the needed memory.
+</p>
+
+<p>
+  To implement supersampling, we modified the following existing methods: <code>fill_pixel</code>, 
+  <code>rasterize_triangle</code>, <code>set_sample_rate</code>, <code>set_framebuffer_target</code>, 
+  and <code>resolve_to_framebuffer</code>. Changes include:
+</p>
+
+<ol>
+  <li>
+    Properly resize the sample buffer to hold \(\text{width}*\text{height}*\text{sampling rate}\) sampling points.
+  </li>
+  <li>
+    Add inner loops inside the original rasterization algorithm to loop through all sampling locations within the pixel. 
+    These locations are uniformly spread out inside the pixel location, 
+    having the same distance between each other. 
+    That is, they should be \(1 / \sqrt{\text{sampling rate}} \) apart from each other on both axis.
+  </li>
+  <li>
+    Evaluate these sampling locations and save the color to the now-resized sample buffer.
+  </li>
+  <li>
+    When resolving to the frame buffer, loop through all sampled values inside each pixel and average them; 
+    assign the average to the location in the frame buffer.
+  </li>
+</ol>
+
+<p>
+  After these modifications, we observe good antialiasing effects on rasterized triangles. 
+  The results of <code>basic/test4.svg</code> are shown below, with a sampling rate of 1, 4, and 16. 
+</p>
 
 <div align="middle">
   <table style="width=100%">
     <tr>
       <td>
-        <img src="images/image1.png" align="middle" width="500px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/test4_rate_1.png" align="middle" width="500px"/>
+        <figcaption align="middle"><code>basic/test4.svg</code> using code from Task 2, with a sampling rate of 1.</figcaption>
       </td>
       <td>
-        <img src="images/image2.png" align="middle" width="500px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/test4_rate_1_inspector.png" align="middle" width="500px"/>
+        <figcaption align="middle">
+          <code>basic/test4.svg</code> with a sampling rate of 1. The inspector highlights the tip of the thin triangle. 
+          Note the jaggies from aliasing.
+        </figcaption>
       </td>
     </tr>
     <br>
     <tr>
       <td>
-        <img src="images/image3.png" align="middle" width="500px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/test4_rate_4.png" align="middle" width="500px"/>
+        <figcaption align="middle"><code>basic/test4.svg</code> using code from Task 2, with a sampling rate of 4.</figcaption>
       </td>
       <td>
-        <img src="images/image4.png" align="middle" width="500px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <img src="images/test4_rate_4_inspector.png" align="middle" width="500px"/>
+        <figcaption align="middle">
+          <code>basic/test4.svg</code> with a sampling rate of 4. The inspector highlights the tip of the thin triangle. 
+          The tip is now more connected.
+        </figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/test4_rate_16.png" align="middle" width="500px"/>
+        <figcaption align="middle"><code>basic/test4.svg</code> using code from Task 2, with a sampling rate of 16.</figcaption>
+      </td>
+      <td>
+        <img src="images/test4_rate_16_inspector.png" align="middle" width="500px"/>
+        <figcaption align="middle">
+          <code>basic/test4.svg</code> with a sampling rate of 16. The inspector highlights the tip of the thin triangle. 
+          Jaggies are barely noticeable.
+        </figcaption>
       </td>
     </tr>
   </table>
 </div>
 
+<p>
+  We can see that jaggies are present in the first image at the top of the thin triangle (sampling rate of 1), 
+  potentially because the triangle does not pass through the centers of some pixels. 
+  As we increase the sampling rate, we can see that the triangle becomes connected, 
+  and the edges are “softened” with partially colored pixels. 
+  This is because we sample at different spreading locations within the pixel at a higher resolution, 
+  so we can capture the triangle passing through off-centered points and approximately evaluate the percentage of the pixel covered by the triangle. 
+  Viewing the whole image, we can see most jaggies are removed as the sampling rate increases, 
+  achieving the desired antialiasing effect on rasterized triangles.
+</p>
 
-<h3 align="middle">Part 2: Antialiasing triangles</h3>
+<h3 align="middle">Part 2 Extra Credit: Jittered Sampling</h3>
 
+<p>
+  We implemented jittered sampling and compared it with the regular grid supersampling pattern. 
+  A jittered pattern is a combination of a uniform grid pattern and a random pattern. 
+  Instead of a uniform grid pattern, we apply a random offset to both the \(x\) and \(y\) coordinates of the original sampling location. 
+  This offset is in the range of \((-0.5 / \sqrt{\text{sampling rate}}, 0.5 / \sqrt{\text{sampling rate}})\), 
+  so we still have only one sampling point for each sub-block. 
+  We now have a more random pattern while still preserving the relative spreading of points within the pixel. 
+  This avoids the regularity of the uniform pattern, 
+  as the regular grid pattern makes it easier for higher frequencies to alias with a lower frequency pattern, 
+  creating artifacts like the moiré patterns. 
+  The random offsets break the regular pattern and thus turn the aliasing into more random outputs, e.g., noise. 
+  This pattern is also better than full random sampling, as the better spacing approximates the average color better. 
+  As a result, jittered sampling sometimes works better than regular grid supersampling by replacing aliasing with some acceptable noise. 
+</p>
 
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/hardcore_uniform.png" align="middle" width="500px"/>
+        <figcaption align="middle">
+          <code>hardcore/01_degenerate_square1.svg</code> using regular grid supersampling, 
+          with a sampling rate of 4. Note the moiré-like pattern on the top left corner, 
+          highlighted by the inspector. 
+        </figcaption>
+      </td>
+      <td>
+        <img src="images/hardcore_jittered.png" align="middle" width="500px"/>
+        <figcaption align="middle">
+          <code>hardcore/01_degenerate_square1.svg</code> using jittered supersampling, 
+          with a sampling rate of 4. Note that the moiré-like pattern is partly replaced by noise, 
+          highlighted by the inspector. 
+        </figcaption>
+      </td>
+    </tr>
+    <br>
+  </table>
+</div>
+
+<p>
+  Observe the following images of <code>hardcore/01_degenerate_square1.svg</code>, 
+  rendered with grid supersampling and jittered sampling. On the top left corner, 
+  we can observe fewer artifact patterns on the jittered image, replaced with some blurred noise.
+</p>
 
 <h3 align="middle">Part 3: Transforms</h3>
 
