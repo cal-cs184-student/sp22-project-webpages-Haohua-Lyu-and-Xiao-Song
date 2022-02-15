@@ -375,11 +375,30 @@
 
 <h3 align="middle">Part 3: Transforms</h3>
 
+<h4>What we want the cubeman looks like</h4>
 <p>
-  In my_robot.svg graph (Figure my_robot.svg render output), we move the cube man to the pose shown in the lecture slides. 
+  In my_robot.svg graph (Figure my_robot.svg render output), we move the cube man to the pose shown in the lecture slides and change the color to light blue.
   The lower part of the right hand is rotated 90 degrees counterclockwise. 
   The whole left hand is rotated 90 degrees counterclockwise, and the head is rotated 15 degrees counterclockwise. 
 </p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/cubeman_lecture.png" align="middle" width="300px"/>
+        <figcaption align="middle">Figure cubeman in lecture slides</figcaption>
+      </td>
+      <td>
+        <img src="images/my_robot.png" align="middle" width="500px"/>
+        <figcaption align="middle">Figure my_robot.svg render output</figcaption>
+      </td>
+    </tr>
+    <br>
+  </table>
+</div>
+
+<h4>How we implement the transformation</h4>
 <p>
   In the lecture, we mentioned the idea that rotating around a given point is equivalent to 
   translating negative distance, doing the rotation, and then translating back. 
@@ -405,13 +424,11 @@
         <img src="images/rotate_right_arm.jpeg" align="middle" width="500px"/>
         <figcaption align="middle">Figure rotate left arm</figcaption>
       </td>
-      <td>
-        <img src="images/my_robot.png" align="middle" width="500px"/>
-        <figcaption align="middle">Figure my_robot.svg render output</figcaption>
-      </td>
     </tr>
   </table>
 </div>
+
+
 
 <h2 align="middle">Section II: Sampling</h2>
 
@@ -465,6 +482,7 @@
 </div>
 
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<h4>Explain pixel sample in your own words</h4>
 <p>
   Pixel sampling is used when mapping one discrete coordinate space value to another discrete coordinate space 
   given some contiguous transformation between the two coordinates space. 
@@ -479,18 +497,26 @@
   In the bilinear sample case, we “estimate” value for a contiguous location using a weighted sum of 4 of its closes discrete location, 
   where the weight is “how close is the contiguous point to the discrete point.” 
 </p>
+<h4>Explain how you implement pixel sample</h4>
 <p>
   In our nearest neighbor sample implementation, we use std::round to find the most relative discrete pixel coordinate of a given contiguous coordinate. 
-  In our bilinear sample implementation, we use std::ceil and std::floor to find the nearest four discrete pixel coordinates 
-  and use a weighted sum of those 4 pixel’s values as sample value. 
 </p>
 <p>
-  The svg/texmap/test1.svg is a case where the bilinear interpolation result outperforms the nearest neighbor result. 
-  In the 1 sample per pixel case, the nearest neighbor sample only has dotted lines on the rendered graph, 
-  whereas the bilinear sample has a more contiguous line (compare left two figure). 
-  In the 16 sample per pixel case, the nearest neighbor sample shows a jagged line when zoomed out. 
-  In the bilinear sample case, the white line is less jagged and smooth (compare right two figure).
+  In our bilinear sample implementation, we use std::ceil and std::floor to find the nearest four discrete pixel coordinates 
+  and use a weighted sum of those 4 pixel’s values as sample value. The weight in the case is the distance between contigious sample 
+  point and 4 closest point.
 </p>
+<h4>Bilinear sample outperform nearest neighbour sample</h4>
+<p>
+  The svg/texmap/test1.svg is a case where the bilinear interpolation result outperforms the nearest neighbor result. 
+</p>
+<ul>
+  <li>In the 1 sample per pixel case, the nearest neighbor sample only has dotted lines on the rendered graph, 
+  whereas the bilinear sample has a more contiguous line (compare left two figure). </li>
+  <li>In the 16 samples per pixel case, the bilinear sample yield a smoother line than the nearest neighbor one (compare right two figure).</li>  
+  <li>Bilinear sample with 4x4 supersample yield best image that contain minimal aliasing effect</li>
+</ul>
+
 <div align="middle">
   <table style="width=100%">
     <tr>
@@ -517,33 +543,70 @@
   </table>
 </div>
 
-<p>
-  The nearest neighbor sample commonly runs much faster than the bilinear sample, 
-  making it more widely used to deploy the CV model as an edge device. 
-  The closest neighbor sample takes the neighbor pixel value without blurring, 
-  which better preserves the photo’s sharpness. However, this also leads to more jaggie artifacts, 
-  as shown in the four figures above. The bilinear sample takes a weighted average of 4-pixel points around; 
-  this can be considered as some form of “filtering with sampling.” Since it “blurs out” some high-frequency information during the sample, 
-  bilinear samples tend to have less jagged than the nearest neighbor sample. 
-  Consequently, bilinear samples tend to blur the resulting image and do not present the sharpness of the picture.
-</p>
+<h4>Comments on relative difference</h4>
+<ul>
+  <li>The nearest neighbor sample commonly runs much faster than the bilinear sample, 
+    making it more widely used to deploy the CV model as an edge device. </li>
+  <li>The nearest neighbor sample takes the neighbor pixel value without blurring, 
+    which better preserves the photo’s sharpness. </li>
+  <li>However, nearest neighbour sample also leads to more jaggie artifacts 
+    because the sample rate is low and the image contain high frequency information (sharp change around the line)</li>
+  <li>The bilinear sample takes a weighted average of 4-pixel points around; 
+    this can be considered as some form of “filtering with sampling.” 
+    Since it “blurs out” some high-frequency information during the sample, </li>
+  <li>Bilinear samples tend to have less jagged than the nearest neighbor sample.
+      Consequently, bilinear samples tend to blur the resulting image and do not present the sharpness of the picture.
+  </li>
+  <li>Supersample address the aliasing effect better than only applying bilinear sample. 4x4 supersample yield better effect
+    than 1x1 sammple with bilinear filter</li>
+</ul>
 
 <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
-
+  <h4>Explain level sample</h4>
   <p>
+    When conducting texture sample, the footprint of a screen space pixel on texture space varies a lot, 
+    causing aliasing effect happen 
+    (i.e. 1 pixel on screen space is low frequency, large area on texture space is high frequency).
     The main idea of the level sample is a downsample the texture space and select a downsampled texture space level 
     that has a similar resolution as a particular region in your screen space. 
     The is mainly trying to avoid aliasing issues when sampling at a low rate 
     (e.g., a small fraction of screen space that only takes 2x2 pixels) 
     on high-frequency information (e.g., corresponding texture space take 20x20 pixels). 
   </p>
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/footprint.png" align="middle" width="500px"/>
+          <figcaption align="middle">Figure Pixel footprint difference</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <h4>How to implement level sample</h4>
   <ol>
     <li>Compute sample location (x, y); this can be supersampled location</li>
     <li>Compute (x,y)’s texture space coordinate (u,v)_xy using barycentric coordinate.</li>
     <li>Compute (x+1, y) and (y, x+1)’s texture space coordinate (u,v)_x+1y, (u,v)xy+1 using barycentric coordinate.</li>
-    <li>Compute Euler distance between (u,v)_xy and (u,v)_x+1y, (u,v)xy+1. Take the larger value. The value here means “how many pixels on texture space correspond to 1 pixel on sample space”.</li>
+    <li>Compute Euler distance between (u,v)_xy and (u,v)_x+1y, (u,v)xy+1 (L as showned in the graph below). 
+      Take the larger value. The value here means “how many pixels on texture space correspond to 1 pixel on sample space”.
+      Taking the max value is an "safety" way to guarenteey no aliasing, but may cause over-blurring the result image. 
+      In practice, people also consider using average of Lx and Ly</li>
     <li>Take log2 on the larger value we just compute, and the result is the corresponding level. The log2 is because the texture space is downsampled with 2x2 on each level.</li>
-  </ol>  
+  </ol>
+  <p>We have encountered a CLang bug when computing (x+1, y) (x, y+1)'s texture space coordinate, we have report that bug here <a href="https://piazza.com/class/kyerpad7ymj4rl?cid=89_f11">Link to Piazza</a></p>
+  <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/compute_level.png" align="middle" width="500px"/>
+          <figcaption align="middle">Figure Compute pixel's texture level</figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <h4>Tradeoff of pixel sample, level sample, supersample on speed, memory, and antialiasing power</h4>
   <p>
     All the below analysis assumes keeping other factors constant and only changing one aspect 
     (e.g., the level sample can be combined with nearest neighbor sample or bilinear sample, 
@@ -569,11 +632,14 @@
     supersample (e.g., 4x4 supersample) takes the longest time. This is because we need to sample multiple times for a single pixel.
   </p>
   <p>
-    Level sample takes less time than supersampling since it only conducts 1 sample for each pixel. 
+    Level sample takes less time than supersampling since it only conducts 1 sample for each pixel (this sample can be bilinear or nearest). 
     However, there is an overhead on computing the corresponding mipmap level when using a level sample. 
+    When we're interpolate between two mipmap (i.e. weighted average on sample level D and sample level D+1), 2x sample is needed. 
+    But this is still less work compared with 4x4 supersample.
   </p>
   <p>
-    Bilinear sample take longer time than nearest neighbor sample mainly because of the bandwidth issue mentioned above.
+    Bilinear sample take longer time than nearest neighbor sample mainly because of the bandwidth issue mentioned above 
+    (extra computation of bilinear is not an issue on modern CPU/GPU since the program is memory bounded).
   </p>
 
 <h4>Antialiasing</h4>
@@ -601,9 +667,10 @@
   </p>
   <p>
     As can be seen by comparing Figure 6 (a) with Figure 6 (b), Figure 6 (c) with Figure 6 (c) bilinear sample alleviate some aliasing effect compared to nearest neighbour. 
+    The Figure 6 (b) clearly have more artifact than Figure 6 (a) when zoomed out.
   </p>
   <p>
-    The best antialiasing effect is achieve by combining bilinear sample with nearest level map sample.
+    In theory, supersample yield best antialising power. Combining bilinear sample with nearest/interpolate level map sample can also achieve similar result.
   </p>
 
   <div align="middle">
