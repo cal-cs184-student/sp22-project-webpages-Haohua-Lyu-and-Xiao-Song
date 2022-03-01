@@ -71,8 +71,8 @@
 			  <figcaption align="middle">Part 5: <code>dae/teapot.dae</code> with the selected edge split.</figcaption>
 			</td>
 			<td>
-			  <img src="images/overview_teapot_flip.png" align="middle" width="500px"/>
-			  <figcaption align="middle">Part 4: <code>dae/teapot.dae</code> with the selected edge flipped.</figcaption>
+			  <img src="images/overview_torus.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 6: <code>dae/torus/input.dae</code> with mesh upsampling.</figcaption>
 			</td>
 		  </tr>
 		</table>
@@ -117,6 +117,8 @@
 		</table>
 	</div>
 
+	<br>
+	
 	<p>
 		We now show each step taken to evaluate the Bezier curve at the default parameter \(t\) (0.5).
 	</p>
@@ -179,12 +181,109 @@
 
     <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
 
+	<p>
+		The de Casteljau algorithm can be extended to handle Bezier surfaces by having different parameters for both dimensions. That is, we use \(u, v\) as parameters and evaluate the problem dimension by dimension as follows:
+		<ol>
+			<li>
+				For each row of the control points, we evaluate the 1D Bezier curve using the 1D de Casteljau algorithm with the parameter \(u\). Note that since we are now dealing with 3D points, we need to take three <code>lerp()</code> calls. 
+			</li>
+			<li>
+				Then, collect all evaluated points from each row and put in a vector. This can be understood as a “column” of evaluated control points, or a "moving" Bezier curve along the other dimension.
+			</li>
+			<li>
+				Use the 1D de Casteljau algorithm again, but with parameter \(v\). This gives us the final evaluated point on the Bezier surface.
+			</li>
+		</ol>
+	</p>
 
+	<div align="middle">
+		<img src="images/p2_theory.png" align="middle" width="500px"/>
+		<figcaption align="middle">An illustration of the Bezier surface evaluation. Source: Lecture 7 Slide 89</figcaption>
+	</div>
+
+	<br>
+
+	The first step is implemented in <code>evaluateStep()</code> and <code>evaluate1D()</code>. The next two steps are implemented in <code>evaluate()</code>. We show the evaluated Bezier surface of the teapot (<code>bez/teapot.bez</code>) below. 
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="images/p2_wire.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>bez/teapot.bez</code> with wireframe shown.</figcaption>
+			</td>
+			<td>
+			  <img src="images/p2_nowire.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>bez/teapot.bez</code> with wireframe hidden.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
 
     <h2 align="middle">Section II: Sampling</h2>
 
     <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+	<p>
+		To implement the area-weighted vertex normals of a specific vertex, we iterate all faces neighboring the given vertex, calculate the normals using cross products, and sum them. We normalize the sum at the end. Specifically, we follow these steps:
+		<ol>
+			<li>
+				Save the root vertex and the first neighbor vertex (found by <code>halfedge()->twin()->vertex())</code> as the “previous” vertex;
+			</li>
+			<li>
+				Move to the next connecting edge by <code>halfedge()->twin()->next()</code>, and get the corresponding vertex;
+			</li>
+			<li>
+				Now we have three vertices of a triangle, so we can calculate the normal of this triangle by finding the cross product of the two edges connecting the root vertex. This normal should be weighted by the triangle's area. We achieve this by normalizing it, since the magnitude of the cross product is the area of the parallelogram spanned by the two vectors, which is double the triangle area. The result is hence one half of the weighted normal; this is fine since we will normalize the sum again at the end. 
+			</li>
+			<li>
+				Add this weighted normal to a total sum, assign the current vertex as the “previous” vertex, and move to the next connecting edge. Repeat until we traverse all connecting vertices.
+			</li>
+			<li>
+				Normalize the total sum of the area-weighted normals.
+			</li>
+		</ol>
+	</p>
 
+	<p>
+		Once we calculated these vertex normals, we can use them for Phong shading, giving a better shading effect than the default flat shading. Improvements are shown below.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+			<tr>
+			  <td>
+				<img src="images/p3_teapot_nq.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> with flat shading.</figcaption>
+			  </td>
+			  <td>
+				<img src="images/p3_teapot_q.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> with Phong shading.</figcaption>
+			  </td>
+			</tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p3_max_nq.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>dae/maxplanck.dae</code> with flat shading.</figcaption>
+				</td>
+				<td>
+				  <img src="images/p3_max_q.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>dae/maxplanck.dae</code> with Phong shading.</figcaption>
+				</td>
+			  </tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p3_beetle_nq.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>dae/beetle.dae</code> with flat shading.</figcaption>
+				</td>
+				<td>
+				  <img src="images/p3_beetle_q.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>dae/beetle.dae</code> with Phong shading. Note that our implementation handles boundaries correctly.</figcaption>
+				</td>
+			  </tr>
+		</table>
+	  </div>
 
     <h3 align="middle">Part 4: Half-edge flip</h3>
 
