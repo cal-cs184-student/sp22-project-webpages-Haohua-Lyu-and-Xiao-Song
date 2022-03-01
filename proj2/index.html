@@ -1,7 +1,206 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <style>
+    body {
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+  </style>
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 284: Computer Graphics and Imaging, Spring 2022</h1>
+  <h1 align="middle">Project 2: Mesh Editor</h1>
+  <h2 align="middle">Xiao Song (xiaosx@berkeley.edu), Haohua Lyu (haohua@berkeley.edu)</h2>
+
+  <br><br>
+
+  <div>
+
+    <h2 align="middle">Overview</h2>
+    <p>Geometric modeling techniques allow us to represent complex objects with simpler shapes. In this homework, we implemented several methods related to Bezier curves, surfaces, and mesh editing, including the use of the de Casteljau algorithm and the half-edge data structure. In the end, we were able to render and alter Bezier curves and triangle meshes, gaining a better understanding of geometric modeling.</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="images/overview_curve2.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 1: <code>bzc/curve2.bzc</code> with our implementation.</figcaption>
+			</td>
+			<td>
+			  <img src="images/overview_wary_cube.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 2: <code>bez/wary_cube.bez</code> with our implementation.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="images/overview_maxplanck.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 3: <code>dae/maxplunck.dae</code> with area-weighted vertex normals.</figcaption>
+			</td>
+			<td>
+			  <img src="images/overview_teapot_flip.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 4: <code>dae/teapot.dae</code> with the selected edge flipped.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="images/overview_teapot_split.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 5: <code>dae/teapot.dae</code> with the selected edge split.</figcaption>
+			</td>
+			<td>
+			  <img src="images/overview_teapot_flip.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 4: <code>dae/teapot.dae</code> with the selected edge flipped.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	  </div>
+
+    <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+    <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+
+    <p>The de Casteljau algorithm is a recursive algorithm used to evaluate Bezier curves. What is interesting about this algorithm is that it can evaluate curves using linear interpolation, making it easy to implement and numerically stable. Specifically, the de Casteljaua algorithm takes n+1 control points to evaluate a Bezier curve of degree n as follows:
+	  <ol>
+		  <li>
+			For each edge between neighboring control points, find a new control point using linear interpolation with a shared parameter \(t \in [0, 1]\);
+		  </li>
+		  <li>
+			Connects neighboring new points to get new edges;
+		  </li>
+		  <li>
+			Repeat the process until only one point is generated. This is the Bezier curve evaluated at the parameter \(t\).
+		  </li>
+	  </ol>
+		
+		
+	For the implementation, we implement the <code>evaluateStep</code> function with a vector of control points. Since we are dealing with 2D points, we need to take two <code>lerp()</code> calls for both \(x\) and \(y\) coordinates, where \(p_i’.x = \verb|lerp|(p_i.x, p_{i+1}.x, t) = (1 - t) * p_i.x + t * p_{i+1}.x\) (similarly for \(y\)). We store all intermediate points in a new vector of size <code>points.size() - 1</code> and return it. </p>
+
+	<p>
+	  We created a new <code>curve3.bzc</code> file with six control points; we will show the evaluation of the Bezier curve below using the new curve.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="images/p1_raw.png" align="middle" width="500px"/>
+			  <figcaption align="middle">The new <code>bzc/curve3.bzc</code> created, with 6 control points shown.</figcaption>
+			</td>
+			<td>
+			  <img src="images/p1_curve.png" align="middle" width="500px"/>
+			  <figcaption align="middle">The new <code>bzc/curve3.bzc</code> created, with the curve shown.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<p>
+		We now show each step taken to evaluate the Bezier curve at the default parameter \(t\) (0.5).
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+			<tr>
+			  <td>
+				<img src="images/p1_step1.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>bzc/curve3.bzc</code> at step 1.</figcaption>
+			  </td>
+			  <td>
+				<img src="images/p1_step2.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>bzc/curve3.bzc</code> at step 2.</figcaption>
+			  </td>
+			</tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p1_step3.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>bzc/curve3.bzc</code> at step 3.</figcaption>
+				</td>
+				<td>
+				  <img src="images/p1_step4.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>bzc/curve3.bzc</code> at step 4.</figcaption>
+				</td>
+			</tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p1_step5.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>bzc/curve3.bzc</code> at step 5. This is the final evaluated point.</figcaption>
+				</td>
+				<td>
+				  <img src="images/p1_final.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>bzc/curve3.bzc</code> at step 5, with the whole curve shown.</figcaption>
+				</td>
+			</tr>
+		</table>
+	  </div>
+
+	<p>
+		We now show the Bezier curve with the last control point moved and a different \(t\).
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="images/p1_moved.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>bzc/curve3.bzc</code> with the last control point moved.</figcaption>
+			</td>
+			<td>
+			  <img src="images/p1_t.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>bzc/curve3.bzc</code> with a different \(t\).</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+    <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+
+
+
+    <h2 align="middle">Section II: Sampling</h2>
+
+    <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+
+
+    <h3 align="middle">Part 4: Half-edge flip</h3>
+
+
+    <h3 align="middle">Part 5: Half-edge split</h3>
+
+
+    <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+
+
+
+    <h2 align="middle">Section III: Optional Extra Credit</h2>
+    <p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
+
+    <h3 align="middle">Part 7: Design your own mesh!</h3>
+
+</body>
+
 </html>
