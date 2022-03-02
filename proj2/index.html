@@ -391,6 +391,27 @@
 
     <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
 
+	  <p>
+		We implement the loop subdivision by utilizing edge flip and edge split implemented in Part 4 and 5. This allows us to subdivide each triangle into four smaller triangles, known as a 4-1 subdivision, giving us a finer, upsampled geometric model. We implement this feature in the following steps:
+		<ol>
+			<li>
+				Iterate and update the positions of all vertices and midpoints of all edges (i.e., future new vertices), following the weights specified by the algorithm. For the existing vertices \(p_i\), we update them by \((1 - n * u) * p_i + u * \sum_{\forall p_n} p_n \), where \( p_n \) is a neighboring vertex. For the edge midpoints \(m_i\), we update them by \(\frac{3}{8} * (A + B) + \frac{1}{8} * (C + D)\), with \(A, B, C, D\) shown below. We store these new positions to <code>Vertex::newPosition</code> and <code>Edge::newPosition</code> respectively. Unlike the write-up, we do this step before the actual division, because it is easier and clearer to iterate through vertices and edges now than later.
+			</li>
+			<img src="images/p6_position.png" align="middle" width="500px"/>
+				  <figcaption align="middle">An illustration of the weights for new vertex positions. Source: Lecture 8 Slide 36</figcaption>
+			<li>
+				We split all edges and then flip edges that are connecting an old vertex with a new vertex. This is done by first iterating through all edges and call <code>splitEdge()</code>. Once split, we update the new position of the new vertex with the midpoint calculated in the previous step, and label the new edges properly. Note that although technically the original edges are split into two “new” edges, we should not flip them. This has led to buggy code as we mistakenly marked all edges as new edges, so some old vertices have too few edges connected while newer ones have too much after edge flipping. After labeling, we flip the new blue edges accordingly. We also need to make sure we toggle the <code>isNew</code> off at some point, so we have no new edges when we try to upsample for one more time.
+			</li>
+			<img src="images/p6_subdivision.png" align="middle" width="500px"/>
+				  <figcaption align="middle">An illustration of the 4-1 subdivision procedures. Source: Project 2 Assignment Page</figcaption>
+			<li>Update all vertices to the stored new positions.</li>
+		</ol>
+	  </p>
+
+	  <p>
+		 We show the smoothing effect of subdivision in the following images with <code>dae/teapot.dae</code>.
+	  </p>
+
 	<div align="middle">
 		<table style="width=100%">
 			<tr>
@@ -418,12 +439,24 @@
 		</table>
 	  </div>
 
+	  <p>We observe that the upsampled mesh is much smoother than the original mesh, with sharp corners and edges removed. This is because the positions of the new vertices are normalized using neighboring vertices. Thus, those on the edges are now an average of the neighboring vertices on the two faces, making the edge rounded. </p>
+
+	  <p>
+		The over smooth sharp edge issue can be fixed by marking some edges as “sharp” during the subdivision process and updating vertex on those sharp edges with different weighted rules. This is shown in the lecture slides below, where the neighbor vertex is weighted differently on the short edge vertex.
+	  </p>
 
 	<div align="middle">
 		<img src="images/p6_edge_way_to_fix.png" align="middle" width="500px"/>
 		<figcaption align="middle">Using different edge split weight for edge on sharp edged. Source Lecture 8 slides</figcaption>
 	</div>
 
+	<p>
+		We also observe that the upsampled mesh for <code>dae/cube.dae</code> is not symmetric. This is because the cube is initially drawn with only one edge on each face of the cube. Hence, for each face, two vertices connected by the edge have a greater degree than those that are not. For all 8 vertices, we have one with degree 3, three with degree 4, three with degree 5, and one with degree 6. The difference in degrees will lead to very different new vertex positions, as we take averages of neighboring vertices in the calculation. As we subdivide for more steps, we will see a sharper corner on the ones with fewer degrees, most notably with the one with degree 3.
+	</p>
+
+	<p>
+		To fix this, we simply need to make sure that all vertices have the same number of degrees at the beginning. We can do this by splitting the edges on each face of the cube, thus making each original vertex have a degree of 6. This ensures the symmetry of the upsampled mesh, although this also introduces new inward-pointing corners at the center of each face. 
+	</p>
 
     <h2 align="middle">Section III: Optional Extra Credit</h2>
     <p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
