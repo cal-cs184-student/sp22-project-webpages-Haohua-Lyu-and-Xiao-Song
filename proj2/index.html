@@ -287,9 +287,107 @@
 
     <h3 align="middle">Part 4: Half-edge flip</h3>
 
+	<div align="middle">
+		<img src="images/p4_edge_flip_explain.jpg" align="middle" width="500px"/>
+		<figcaption align="middle">An illustration of the edge flip algorithm and naming convention</figcaption>
+	</div>
+
+	<p>
+		We implemented the edge flip algorithm following the suggestions mentioned in the spec: writing down all the mesh elements ( vertex, half-edge, face ) before and after the flip, and then flipping the edge by re-assigning vectors. 
+		<ol>
+			<li>
+				Record all the half-edge, vertex, face, and edge bc before and after the edge flip. 
+			</li>
+			<li>
+				Figure out which mesh iterator ( e.g., half-edge iterator, vertex iterator ) is re-used in the half-edge flip process. 
+				We do not create any new mesh elements. 
+				Instead, we reuse the old element before the flip. 
+				In our case, half-edge bc becomes half-edge ad (we call it <code>he_bc_2_ad</code>), half-edge cb becomes half-edge da, face abd become face adc, face bdc become face bda, and edge bc become edge ad. 
+			</li>
+			<li>
+				Re-assign twin, next, vertex, edge, face for all half-edge elements we recorded. And re-assign half-edge for all edge, face, vertex elements we recorded. 
+			</li>
+		</ol>
+	</p>
+
+	No significant bug is encountered. The code works and compiles the first time we run it.
+
+
+	<div align="middle">
+		<table style="width=100%">
+			<tr>
+			  <td>
+				<img src="images/p45_edge_before.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> before edge flip.</figcaption>
+			  </td>
+			  <td>
+				<img src="images/p4_edge_flip_after.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> after multiple edge flip.</figcaption>
+			  </td>
+			</tr>
+		</table>
+	</div>
 
     <h3 align="middle">Part 5: Half-edge split</h3>
 
+	<div align="middle">
+		<img src="images/p5_edge_split_explain.jpg" align="middle" width="500px"/>
+		<figcaption align="middle">An illustration of the edge split algorithm and naming convention</figcaption>
+	</div>
+
+	<p>
+		We implement the split edge algorithm following the same “write down all mesh element” suggestion as part 4. 
+		<ol>
+			<li>
+				Record all the half-edge, vertex, face, and edge bc before and after the edge split.
+			</li>
+			<li>
+				Figure out which mesh iterator ( e.g., half-edge iterator, vertex iterator ) is re-used in the half-edge flip process. 
+				In our case, half-edge bc becomes half-edge bm (we call it `he_bc_2_bm`), half-edge cb becomes half-edge mb, 
+				face abd become face abm, face bdc become face bdm, and edge cb becomes edge mb.
+			</li>
+			<li>
+				Create a new mesh element using mesh <code>newXX()</code> function (e.g., create new <code>VertexIter</code> with <code>this->newVertex()</code>) 
+				to place the newly created mesh element in the linked list. 
+				In our case, we make new vertex m; new edge am md cm, new half-edge am ma md dm cm mc, new face mdc amc. 
+			</li>
+			<li>
+				Compute the position for vertex m as the average of vertex b and vertex c position
+			</li>
+			<li>
+				Re-assign twin, next, vertex, edge, face for all half-edge elements we recorded and created. 
+				And re-assign half-edge for all edge, face, vertex elements we recorded and created. 
+			</li>
+		</ol>
+	</p>
+
+	The first time we run the code, the code segmentation fault. 
+	We think it might be because of some pointer false assignment in the code since the variable can be easily mistyped. 
+	We go through the code and compare the variables we used for each mesh element with the list we wrote down initially and realized we 
+	have mistyped half-edge am with half-edge ma. After changing this bug, the code works well.
+
+
+	<div align="middle">
+		<table style="width=100%">
+			<tr>
+			  <td>
+				<img src="images/p45_edge_before.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> before edge flip and split.</figcaption>
+			  </td>
+			  <td>
+				<img src="images/p5_edge_split_after.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>dae/teapot.dae</code> after edge split. (red is split)</figcaption>
+			  </td>
+			</tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p5_edge_flip_split_after.png" align="middle" width="500px"/>
+				  <figcaption align="middle"><code>dae/teapot.dae</code> after edge split and flip. (red is split, oraneg is flip, green is both split and flip)</figcaption>
+				</td>
+			</tr>
+		</table>
+	  </div>
 
     <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
 
