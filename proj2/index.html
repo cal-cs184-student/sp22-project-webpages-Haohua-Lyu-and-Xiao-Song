@@ -292,6 +292,7 @@
 		<figcaption align="middle">An illustration of the edge flip algorithm and naming convention</figcaption>
 	</div>
 
+	<br><br><h4>Implementation detail</h4>
 	<p>
 		We implemented the edge flip algorithm following the suggestions mentioned in the spec: writing down all the mesh elements ( vertex, half-edge, face ) before and after the flip, and then flipping the edge by re-assigning vectors. 
 		<ol>
@@ -310,9 +311,6 @@
 		</ol>
 	</p>
 
-	No significant bug is encountered. The code works and compiles the first time we run it.
-
-
 	<div align="middle">
 		<table style="width=100%">
 			<tr>
@@ -328,6 +326,13 @@
 		</table>
 	</div>
 
+
+	<br><br><h4>Debug process</h4>
+	<p>
+		No significant bug is encountered. The code works and compiles the first time we run it.
+	</p>
+
+
     <h3 align="middle">Part 5: Half-edge split</h3>
 
 	<div align="middle">
@@ -335,6 +340,7 @@
 		<figcaption align="middle">An illustration of the edge split algorithm and naming convention</figcaption>
 	</div>
 
+	<br><br><h4>Implementation detail</h4>
 	<p>
 		We implement the split edge algorithm following the same “write down all mesh element” suggestion as part 4. 
 		<ol>
@@ -361,12 +367,6 @@
 		</ol>
 	</p>
 
-	The first time we run the code, the code segmentation fault. 
-	We think it might be because of some pointer false assignment in the code since the variable can be easily mistyped. 
-	We go through the code and compare the variables we used for each mesh element with the list we wrote down initially and realized we 
-	have mistyped half-edge am with half-edge ma. After changing this bug, the code works well.
-
-
 	<div align="middle">
 		<table style="width=100%">
 			<tr>
@@ -389,8 +389,24 @@
 		</table>
 	  </div>
 
+	  	<br><br><h4>Debug process</h4>
+	<div>
+		<p>
+			The first time we run the code, the code segmentation fault. 
+		</p>
+		<p>
+			We think it might be because of some pointer false assignment in the code since the variable can be easily mistyped. 
+		</p>
+		<p>
+			We go through the code and compare the variables we used for each mesh element with the list we wrote down initially and realized we 
+			have mistyped half-edge am with half-edge ma. After changing this bug, the code works well.
+		</p>
+	</div>
+
+
     <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
 
+	<br><br><h4>Implementation detail</h4>
 	  <p>
 		We implement the loop subdivision by utilizing edge flip and edge split implemented in Part 4 and 5. This allows us to subdivide each triangle into four smaller triangles, known as a 4-1 subdivision, giving us a finer, upsampled geometric model. We implement this feature in the following steps:
 		<ol>
@@ -416,6 +432,7 @@
 		</ol>
 	  </p>
 
+	  	<br><br><h4>Smooth sharp edge and how to fix</h4>
 	  <p>
 		 We show the smoothing effect of subdivision in the following images with <code>dae/teapot.dae</code>.
 	  </p>
@@ -450,14 +467,37 @@
 	  <p>We observe that the upsampled mesh is much smoother than the original mesh, with sharp corners and edges removed. This is because the positions of the new vertices are normalized using neighboring vertices. Thus, those on the edges are now an average of the neighboring vertices on the two faces, making the edge rounded. </p>
 
 	  <p>
-		The over smooth sharp edge issue can be fixed by marking some edges as “sharp” during the subdivision process and updating vertex on those sharp edges with different weighted rules. This is shown in the lecture slides below, where the neighbor vertex is weighted differently on the short edge vertex.
-	  </p>
+		The over smooth can be handled by making a sequence of splits around the sharp edge, where we split more frequently on edge around the edge. Since the loop subdivision is “averaging neighbor points,” a more dense subdivision around the border would make this average process average around a similar position vertex, which yields a sharp surface.
+ 	 </p>
 
-	<div align="middle">
-		<img src="images/p6_edge_way_to_fix.png" align="middle" width="500px"/>
-		<figcaption align="middle">Using different edge split weight for edge on sharp edged. Source Lecture 8 slides</figcaption>
-	</div>
+	  <div align="middle">
+		<table style="width=100%">
+			<tr>
+			  <td>
+				<img src="images/p6_preserve_sharp_edge_1.png" align="middle" width="500px"/>
+				<figcaption align="middle">Before loop subdivision, demonstrate how to split edge</figcaption>
+			  </td>
+			  <td>
+				<img src="images/p6_preserve_sharp_edge_2.png" align="middle" width="500px"/>
+				<figcaption align="middle">After loop subdivide, view point 1, edge is preserved.</figcaption>
+			  </td>
+			</tr>
+			<br>
+			<tr>
+				<td>
+				  <img src="images/p6_preserve_sharp_edge_3.png" align="middle" width="500px"/>
+				  <figcaption align="middle">After loop subdivide, view point 2, edge is preserved.</figcaption>
+				</td>
+				<td>
+				  <img src="images/p6_preserve_sharp_edge_4.png" align="middle" width="500px"/>
+				  <figcaption align="middle">After loop subdivide, view point 3, edge is preserved.</figcaption>
+				</td>
+			  </tr>
+			<br>
+		</table>
+	  </div>
 
+	  <br><br><h4>Symmetric subdivision</h4>
 	<p>
 		We also observe that the upsampled mesh for <code>dae/cube.dae</code> is not symmetric. This is because the cube is initially drawn with only one edge on each face of the cube. Hence, for each face, two vertices connected by the edge have a greater degree than those that are not. For all 8 vertices, we have one with degree 3, three with degree 4, three with degree 5, and one with degree 6. The difference in degrees will lead to very different new vertex positions, as we take averages of neighboring vertices in the calculation. As we subdivide for more steps, we will see a sharper corner on the ones with fewer degrees, most notably with the one with degree 3.
 	</p>
