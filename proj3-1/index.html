@@ -71,6 +71,7 @@
 			  <figcaption align="middle">CBlucy.dae</figcaption>
 			</td>
 		  </tr>
+		  <br>
 		  <tr>
 			<td>
 			  <img src="part1_visual/CBspheres.png" align="middle" width="500px"/>
@@ -81,6 +82,178 @@
 	</div>
 
 	<h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
+
+	<p>We implement a Bounding Volume Hierarchy (BVH) data structure to speed up our path tracer. BVH is an object partition algorithm that stores primitives inside a tree structure and evaluates the ray with the bounding box of each node. With BVH, we construct a binary tree, store only a small number of primitives in each leaf node exclusively, and traverse the tree by checking whether the ray intersects with the bounding box of each node. The binary tree structure grants fewer intersection checks and huge speed-up. 
+	</p>
+
+	<h3>Implementation of BVH construction</h3>
+
+	<p>
+		The implementation of our BVH construction is detailed as follows:
+		<ol>
+			<li>Iterate through the given list of primitives and expand the node's axis-aligned bounding box with the primitive's bounding box. Also, obtain the centroid of each primitive and calculate the average centroid of the primitives.</li>
+			<li>If there are no more than <code>max_leaf_size</code> primitives in the list, we make a leaf node and store the given range as the start and end of the primitives in the leaf node.</li>
+			<li>Otherwise, we treat the node as an internal node and further split the given list into two halves. To split the list, we first find the longest axis of the bounding box using <code>bbox.extent</code>. Then, we obtain the value of the average centroid on that axis. Using <code>std::partition</code>, we can partition the primitive list in place into two lists, one containing primitives smaller than the average centroid on the longest axis and the other containing the rest. If one of the lists happens to be empty, we move an arbitrary one to the other list.</li>
+			<li>Call the constructor method recursively on the two primitive lists, and assign the two constructed nodes as the left and right child nodes.</li>
+		</ol>
+	</p>
+
+	<h3>Choice of Heuristic</h3>
+
+	<p>
+		We choose the average centroid on the longest axis as the split heuristic. Initially, we use the spatial midpoint of the node's bounding box and select an arbitrary axis to obtain the split point. This approach leads to two problems:
+		<li>For a wide and thin bounding box, a split on the shortest axis can lead to an unbalanced tree.</li>
+		<li>For a large bounding box with sparse clusters (which may occur with the Cornell Box), the split at the spatial midpoint can also lead to an unbalanced tree and even cause a stack overflow error.</li>
+		Hence we find the average centroid on the longest axis to be a better heuristic in addressing the two problems above, as it generally produces a more balanced tree with minimal cost and approaches an \(O(\log N)\) complexity.
+	</p>
+
+	<h3>Implementation of Intersection checks</h3>
+
+	<p>
+		Once we have the BVH tree, we can test the ray intersection in a more efficient way. That is, to test the intersection, we first check if the ray intersects with the bounding box of the node using the 3-slab method; we look for the entering and exiting time of the ray on the three axis and take the maximum of the entering time (“max of the mins”) and the minimum of the exiting time (“min of the maxs”). If the time interval overlaps with the ray's time interval, we proceed to see whether the node is a leaf node. If it is, we iterate through the primitives and find the nearest intersection. Otherwise, we call the function recursively to walk through the leaf and right nodes. This significantly reduces the time used for checking intersections, as we skip nodes (and primitives inside them) when we don't find intersections between the ray and the bounding boxes.
+	</p>
+
+	<h3>Sample results with large .dae files</h3>
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part2_visual/p2_maxplanck.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>\meshedit\maxplanck.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+			<td>
+				<img src="part2_visual/p2_beast.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\meshedit\beast.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part2_visual/p2_bunny.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+			<td>
+				<img src="part2_visual/p2_dragon.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBdragon.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part2_visual/p2_lucy.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBlucy.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Speed Comparison with non-BVH rendering</h3>
+	<p>We see significant speedup with the BVH algorithm. The results for rendering with normal shading (8 threads, 800x600 size) are recorded below.</p>
+	<div align="center">
+		<style type="text/css">
+			.tg  {border-collapse:collapse;border-spacing:0;}
+			.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+			  overflow:hidden;padding:10px 5px;word-break:normal;}
+			.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+			  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+			.tg .tg-1wig{font-weight:bold;text-align:left;vertical-align:top}
+			.tg .tg-fymr{border-color:inherit;font-weight:bold;text-align:left;vertical-align:top}
+			.tg .tg-0pky{border-color:inherit;text-align:left;vertical-align:top}
+			.tg .tg-0lax{text-align:left;vertical-align:top}
+			</style>
+			<table class="tg">
+			<thead>
+			  <tr>
+				<th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Filename</span></th>
+				<th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Number of Primitives</span></th>
+				<th class="tg-fymr"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Without BVH (s)</span></th>
+				<th class="tg-1wig"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">With BVH (s) (+ BVH construction)</span></th>
+				<th class="tg-1wig"><span style="font-weight:700;font-style:normal;text-decoration:none;color:#000;background-color:transparent">Speedup</span></th>
+			  </tr>
+			</thead>
+			<tbody>
+			  <tr>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">sky/CBgems.dae</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">252</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">1.9228</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0832</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">95.67%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">keenan/banana.dae</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">2458</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">17.4094</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0596</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">99.66%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">meshedit/teapot.dae</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">2464</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">17.546</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0736</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">99.58%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">meshedit/cow.dae</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">5856</span></td>
+				<td class="tg-0pky"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">39.9825</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0824</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">99.79%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">meshedit/beetle.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">7558</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">51.7652</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0619</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">99.88%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">sky/CBcoil.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">7884</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">60.9148</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0838</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">99.86%</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">sky/CBbunny.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">28588</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0800 + 0.02</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">meshedit/maxplanck.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">50801</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.1011 + 0.03</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">meshedit/beast.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">64618</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0649 + 0.05</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">sky/CBdragon.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">100012</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0918 + 0.10</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+			  </tr>
+			  <tr>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">sky/CBlucy.dae</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">133796</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">0.0926 + 0.11</span></td>
+				<td class="tg-0lax"><span style="font-weight:400;font-style:normal;text-decoration:none;color:#000;background-color:transparent">N/A</span></td>
+			  </tr>
+			</tbody>
+			</table>
+	</div>
+
+	<p>We can observe huge speed up (>99%) after applying the BVH algorithm thanks to the fact that we can skip many intersection checks. Before using BVH, a ray needs to check a few hundred primitives for intersection; one can observe that the running time is correlated with the number of primitives. With BVH, a ray only needs to check a few primitives (somewhere around <code>max_leaf_size</code>), and the running time is no longer correlated to the number of primitives. There is a cost for constructing the BVH tree, but the time is mostly negligible.  </p>
 
 	<h2 align="middle">Part 3: Direct Illumination</h2>
 	<h3>Implementation of direct light sample over hemisphere</h3>
@@ -157,6 +330,60 @@
 
 	<h2 align="middle">Part 5: Adaptive Sampling</h2>
 
+	<p>Adaptive sampling is a method used to adjust the sampling rate for different parts of the image. When a pixel has converged early, we can terminate the sampling early to reduce the rendering time. Thus, we can raise the sampling rate to reduce noise in the most difficult areas without significantly increasing the overall running time. </p>
+
+	<h3>Implementation of adaptive sampling</h3>
+	<p>The implementation of adaptive sampling is detailed as follows:
+		<ol>
+			<li>
+				Prepare <code>illuminance_sum</code> and <code>illuminance_sqr_sum</code> to store the sums of the illuminance (\(s_1\)) and illuminance squared (\(s_2\)).
+			</li>
+			<li>
+				While the number of sampled rays is smaller than the given maximum sampling rate (<code>ns_aa</code>), generate a sample ray as specified in Part 1. Get the illuminance of the ray using <code>Vector3D::illum()</code> and add to the two sums accordingly.
+			</li>
+			<li>
+				Whenever we have sampled a batch of rays (specified by <code>samplesPerBatch</code>), calculate \(\mu = \frac{s_1}{n}\) and \(\sigma^2 = \frac{1}{n-1} * (s_2 - \frac{s_1^2}{n})\). We can then calculate \(I = 1.96 * \frac{\sigma}{\sqrt{n}}\) and check whether \(I \leq \text{maxTolerance} * \mu\). If true, we can say that the illuminance is already in 95% confidence interval and has thus converged. We can safely break from the loop. 
+			</li>
+			<li>
+				Finally, we update the pixel by averaging the ray with the number of actual samples. We also update the sampling count buffer with the number of actual samples as well.
+			</li>
+		</ol>
+	</p>
+
+	<h3>Sample results with sampling rate image</h3>
+	<p>We rendered <code>CBbunny.dae</code> with 2048 samples per pixel, with 1 sample per light and 5 for max ray depth. The command we run is identical to the one on the assignment spec: <code>./pathtracer -t 8 -s 2048 -a 64 0.05 -l 1 -m 5 -r 480 360 -f bunny.png ../dae/sky/CBbunny.dae </code>. The resulting images are render in 230 seconds. Results are shown below. </p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part5_visual/bunny.png" align="middle" width="500px"/>
+			  <figcaption align="middle">The noise-free image of <code>\sky\CBbunny.dae</code> rendered with adaptive sampling.</figcaption>
+			</td>
+			<td>
+				<img src="part5_visual/bunny_rate.png" align="middle" width="500px"/>
+				<figcaption align="middle">The sampling rate image of <code>\sky\CBbunny.dae</code> rendered with adaptive sampling.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<p>We also rendered <code>CBspheres_lambertian.dae</code> with the same settings. The command we run is: <code>./pathtracer -t 8 -s 2048 -a 64 0.05 -l 1 -m 5 -r 480 360 -f sphere.png ../dae/sky/CBspheres_lambertian.dae </code>. The resulting images are render in 201 seconds. Results are shown below. </p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part5_visual/sphere.png" align="middle" width="500px"/>
+			  <figcaption align="middle">The noise-free image of <code>\sky\CBspheres_lambertian.dae</code> rendered with adaptive sampling.</figcaption>
+			</td>
+			<td>
+				<img src="part5_visual/sphere_rate.png" align="middle" width="500px"/>
+				<figcaption align="middle">The sampling rate image of <code>\sky\CBspheres_lambertian.dae</code> rendered with adaptive sampling.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
 
     <p>txt<code>curve3.bzc</code>text</p>
 	<ol>
