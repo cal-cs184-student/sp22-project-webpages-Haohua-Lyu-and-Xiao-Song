@@ -300,7 +300,7 @@
 	<ol>
 		<li>Given an input ray <code>w_out</code> and its intersection hit point <code>hit_p</code> in the scene. We random sample <code>number of light * number of samples per light</code> random input ray <code>w_in</code>. The random w_in is uniformly sampled over a unit hemisphere over the hit point.</li>
 		<li>For each random sample <code>w_in</code> ray, we cast a ray into the scene ( where the starting of ray is the hit point, and the direction of the ray is <code>w_in</code> ) and check if the ray intersects with any object inside the scene.</li>
-		<li>If the ray intersect with object inside the scene (hit_light), we compute this MC sample as <code>f( hit_p, w_in, w_out ) * L_i( hit_light, w_in ) * cos (theta) / p( w_in )</code>, where <code>f( hit_p, w_in, w_out )</code> is the brdf term of hit_p, <code>L_i( hit_light, w_in ) </code>is the intersected objects emitted light. If the intersected object hit_light is not a light source, its <code>L_i( hit_p, w_in )</code> would be zero and not contribute to MC estimation.</li>
+		<li>If the ray intersect with object inside the scene (hit_light), we compute this MC sample as <code>f( hit_p, w_in, w_out ) * L_i( hit_light, w_in ) * cos (theta) / (2 * pi)</code>, where <code>f( hit_p, w_in, w_out )</code> is the brdf term of hit_p, <code>L_i( hit_light, w_in ) </code>is the intersected objects emitted light. If the intersected object hit_light is not a light source, its <code>L_i( hit_p, w_in )</code> would be zero and not contribute to MC estimation.</li>
 		<li>We average the result over the number of samples we take.</li>
 	</ol>
 
@@ -309,7 +309,7 @@
 		<li>Given an input ray <code>w_out</code> and its intersection hit point <code>hit_p</code> in the scene.</li>
 		<li>We iterate through all the light sources in the scene. If the light source is a point light, we generate one ray between the light source and the hit point <code>hit_p</code>. If the light source is not a point light, we uniformly sample ns_area_light locations on the light source and create rays between the light source random point and hit point <code>hit_p</code>.</li>
 		<li>For every ray created in step (2), we check if the ray intersects any object between hit_p and the light source. This is the “shadow ray” idea mentioned in the spec. </li>
-		<li>If there is no object in between, then this MC sample as <code>f( hit_p, w_in, w_out ) * L_i( light, w_in ) * cos (theta) / p( w_in )</code>. </li>
+		<li>If there is no object in between, then this MC sample as <code>f( hit_p, w_in, w_out ) * L_i( light, w_in ) * cos (theta) / pdf</code>. </li>
 	</ol>
 	<p>Different from the hemisphere case, we uniformly sample over the light source and use bvh to check if there is no object between the light and hit_p</p>
 	
@@ -378,17 +378,17 @@
 			</td>
 			<td>
 			  <img src="part3_visual/CBbunny_l4_s1.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 4 ray per light</figcaption>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code> sampled with 4 ray per light</figcaption>
 			</td>
 		  </tr>
 		  <tr>
 			<td>
 			  <img src="part3_visual/CBbunny_l16_s1.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 16 ray per light</figcaption>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code> sampled with 16 ray per light</figcaption>
 			</td>
 			<td>
 			  <img src="part3_visual/CBbunny_l64_s1.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 64 ray per light</figcaption>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code> sampled with 64 ray per light</figcaption>
 			</td>
 		  </tr>
 		</table>
@@ -415,46 +415,50 @@
 		  <tr>
 			<td>
 			  <img src="part4_visual/result_1024/bench_m5_s1024_l16.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/bench.dae</code>render with 1024 sample per pixel</figcaption>
+			  <figcaption align="middle"><code>sky/bench.dae</code> render with 1024 sample per pixel</figcaption>
 			</td>
 			<td>
 				<img src="part4_visual/result_1024/blob_m5_s1024_l16.png" align="middle" width="500px"/>
-				<figcaption align="middle"><code>sky/blob.dae</code>render with 1024 sample per pixel</figcaption>
+				<figcaption align="middle"><code>sky/blob.dae</code> render with 1024 sample per pixel</figcaption>
 			  </td>
 		  </tr>
 
 		  <tr>
 			<td>
 			  <img src="part4_visual/result_1024/bunny_m5_s1024_l16.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/bunny.dae</code>render with 1024 sample per pixel</figcaption>
+			  <figcaption align="middle"><code>sky/bunny.dae</code> render with 1024 sample per pixel</figcaption>
 			</td>
 			<td>
 				<img src="part4_visual/result_1024/CBbunny_m5_s1024_l16.png" align="middle" width="500px"/>
-				<figcaption align="middle"><code>sky/CBbunny.dae</code>render with 1024 sample per pixel</figcaption>
-			  </td>
-		  </tr>
-
-		  <tr>
-			<td>
-			  <img src="part4_visual/result_1024/CBempty_m5_s1024_l16.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/CBempty.dae</code>render with 1024 sample per pixel</figcaption>
-			</td>
-			<td>
-				<img src="part4_visual/result_1024/CBspheres_lambertian_m5_s1024_l16.png" align="middle" width="500px"/>
-				<figcaption align="middle"><code>sky/CBspheres_lambertian.dae</code>render with 1024 sample per pixel</figcaption>
+				<figcaption align="middle"><code>sky/CBbunny.dae</code> render with 1024 sample per pixel</figcaption>
 			  </td>
 		  </tr>
 
 		  <tr>
 			<td>
 			  <img src="part4_visual/result_1024/wall-e_m5_s1024_l16.png" align="middle" width="500px"/>
-			  <figcaption align="middle"><code>sky/wall-e.dae</code>render with 1024 sample per pixel</figcaption>
+			  <figcaption align="middle"><code>sky/wall-e.dae</code> render with 1024 sample per pixel</figcaption>
 			</td>
 			<td>
-				<img src="part4_visual/result_1024/dragon_m5_s1024_l16.png" align="middle" width="500px"/>
-				<figcaption align="middle"><code>sky/dragon.dae</code>render with 1024 sample per pixel</figcaption>
+			  <img src="part4_visual/result_1024/dragon_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/dragon.dae</code> render with 1024 sample per pixel</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<!--
+			<td>
+			  <img src="part4_visual/result_1024/CBempty_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBempty.dae</code> render with 1024 sample per pixel</figcaption>
+			</td>
+			-->
+			<td>
+				<img src="part4_visual/result_1024/CBspheres_lambertian_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>sky/CBspheres_lambertian.dae</code> render with 1024 sample per pixel</figcaption>
 			  </td>
 		  </tr>
+
+		  
 		</table>
 	</div>
 
@@ -467,7 +471,7 @@
 			  <figcaption align="middle">One bounce (direct illumination) of <code>\sky\CBbunny.dae</code> render result</figcaption>
 			</td>
 			<td>
-				<img src="part4_visual/direct_indirect/CBbunny_m5_s1024_l16_at_least_one_bounce.png" align="middle" width="500px"/>
+				<img src="part4_visual/direct_indirect/CBbunny_m5_s1024_l16_two_bounce_and_more.png" align="middle" width="500px"/>
 				<figcaption align="middle">More than one bounce (indirect illumination) of <code>\sky\CBbunny.dae</code> render result</figcaption>
 			</td>
 		  </tr>
