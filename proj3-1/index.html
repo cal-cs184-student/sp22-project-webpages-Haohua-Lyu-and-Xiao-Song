@@ -38,6 +38,47 @@
 
 	<div>
 
+	<h2 align="middle">Overview</h2>
+
+	<p>The path-tracing algorithm enables us to create a physically-based renderer with realistic results. In this homework, we implemented ray generation and intersection, BVH, direct illumination, global illumination, and adaptive sampling. In the end, we are able to render noise-free images with realistic-looking in a reasonable rendering time.</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part1_visual/CBspheres.png" align="middle" width="500px"/>
+			  <figcaption align="middle">Part 1: <code>\sky\CBspheres_lambertian.dae</code> rendered with normal shading.</figcaption>
+			</td>
+			<td>
+				<img src="part2_visual/p2_maxplanck.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 2: <code>\meshedit\maxplanck.dae</code> rendered with BVH implemented.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part3_visual/l_CBbunny.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 3: <code>\sky\CBbunny.dae</code> rendered with importance sampling, 32 light rays, and 64 sample per pixel.</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/CBspheres_lambertian_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 4: <code>\sky\CBspheres_lambertian.dae</code> rendered with global illumination, 5 max ray depth, 16 light rays, and 1024 sample per pixel.</figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5_visual/bunny_rate.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 5: the sampling rate image of <code>\sky\CBbunny.dae</code> rendered with adaptive sampling.</figcaption>
+			</td>
+			<td>
+				<img src="part5_visual/bunny.png" align="middle" width="500px"/>
+				<figcaption align="middle">Part 5: the noise-free image of <code>\sky\CBbunny.dae</code> rendered with adaptive sampling, with 2048 sample per pixel.</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
 	<h2 align="middle">Part 1: Ray Generation and Scene Intersection</h2>
 
 	<h3>Ray generation and intersection pipeline</h3>
