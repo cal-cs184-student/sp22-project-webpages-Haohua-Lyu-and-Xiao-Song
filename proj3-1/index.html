@@ -105,18 +105,18 @@
 		  <tr>
 			<td>
 			  <img src="part1_visual/CBempty.png" align="middle" width="500px"/>
-			  <figcaption align="middle">CBempty.dae</figcaption>
+			  <figcaption align="middle"> <code>sky/CBempty.dae</code></figcaption>
 			</td>
 			<td>
 			  <img src="part1_visual/CBlucy.png" align="middle" width="500px"/>
-			  <figcaption align="middle">CBlucy.dae</figcaption>
+			  <figcaption align="middle"> <code>sky/CBlucy.dae</code></figcaption>
 			</td>
 		  </tr>
 		  <br>
 		  <tr>
 			<td>
 			  <img src="part1_visual/CBspheres.png" align="middle" width="500px"/>
-			  <figcaption align="middle">CBspheres.dae</figcaption>
+			  <figcaption align="middle"> <code>sky/CBspheres.dae</code></figcaption>
 			</td>
 		  </tr>
 		</table>
@@ -124,8 +124,7 @@
 
 	<h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
 
-	<p>We implement a Bounding Volume Hierarchy (BVH) data structure to speed up our path tracer. BVH is an object partition algorithm that stores primitives inside a tree structure and evaluates the ray with the bounding box of each node. With BVH, we construct a binary tree, store only a small number of primitives in each leaf node exclusively, and traverse the tree by checking whether the ray intersects with the bounding box of each node. The binary tree structure grants fewer intersection checks and huge speed-up. 
-	</p>
+	<p>We implement a Bounding Volume Hierarchy (BVH) data structure to speed up our path tracer. BVH is an object partition algorithm that stores primitives inside a tree structure and evaluates the ray with the bounding box of each node. With BVH, we construct a binary tree, store only a small number of primitives in each leaf node exclusively, and traverse the tree by checking whether the ray intersects with the bounding box of each node. The binary tree structure grants fewer intersection checks and huge speed-up. </p>
 
 	<h3>Implementation of BVH construction</h3>
 
@@ -316,58 +315,245 @@
 	
 	<h3>Image sample result on both direct lightning method</h3>
 
-	<p>TODO: RESULT MIGHT BE INCORRECT, DOUBLE CHECK</p>
-
 	<div align="middle">
 		<table style="width=100%">
 		  <tr>
 			<td>
 			  <img src="part3_visual/h_CBbunny.png" align="middle" width="500px"/>
-			  <figcaption align="middle">Hemisphere sample CBbunny.dae</figcaption>
+			  <figcaption align="middle">Hemisphere sample <code>sky/CBbunny.dae</code></figcaption>
 			</td>
 			<td>
 				<img src="part3_visual/l_CBbunny.png" align="middle" width="500px"/>
-				<figcaption align="middle">Light sample CBbunny.dae</figcaption>
+				<figcaption align="middle">Light sample <code>sky/CBbunny.dae</code></figcaption>
 			</td>
 		  </tr>
 
 		  <tr>
 			<td>
 			  <img src="part3_visual/h_CBempty.png" align="middle" width="500px"/>
-			  <figcaption align="middle">Hemisphere sample CBempty.dae</figcaption>
+			  <figcaption align="middle">Hemisphere sample <code>sky/CBempty.dae</code></figcaption>
 			</td>
 			<td>
 				<img src="part3_visual/l_CBempty.png" align="middle" width="500px"/>
-				<figcaption align="middle">Light sample CBempty.dae</figcaption>
+				<figcaption align="middle">Light sample <code>sky/CBempty.dae</code></figcaption>
 			</td>
 		  </tr>
 
 		  <tr>
 			<td>
 			  <img src="part3_visual/h_CBspheres.png" align="middle" width="500px"/>
-			  <figcaption align="middle">Hemisphere sample CBspheres.dae</figcaption>
+			  <figcaption align="middle">Hemisphere sample <code>sky/CBspheres.dae</code></figcaption>
 			</td>
 			<td>
 				<img src="part3_visual/l_CBspheres.png" align="middle" width="500px"/>
-				<figcaption align="middle">Light sample CBspheres.dae</figcaption>
+				<figcaption align="middle">Light sample <code>sky/CBspheres.dae</code></figcaption>
 			</td>
 		  </tr>
 
+		  <!--
 		  <tr>
 			<td>
 			  <img src="part3_visual/h_dragon.png" align="middle" width="500px"/>
-			  <figcaption align="middle">Hemisphere sample dragon.dae</figcaption>
+			  <figcaption align="middle">Hemisphere sample <code>sky/dragon.dae</code></figcaption>
 			</td>
 			<td>
 				<img src="part3_visual/l_dragon.png" align="middle" width="500px"/>
-				<figcaption align="middle">Light sample dragon.dae</figcaption>
+				<figcaption align="middle">Light sample <code>sky/dragon.dae</code></figcaption>
+			</td>
+		  </tr>
+		  -->
+
+		</table>
+	</div>
+
+	<h3>Compare noise level in soft shadows when rendering with 1,4,16,64 light ray and 1 sampler per pixel</h3>
+	<p>With the number of light ray increased, the soft shadow become smoother. 1 sampler per light create the most noisy soft shadow (kind of like white noise). 64 sampler per light create the most smooth soft shadow</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part3_visual/CBbunny_l1_s1.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code> sampled with 1 ray per light</figcaption>
+			</td>
+			<td>
+			  <img src="part3_visual/CBbunny_l4_s1.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 4 ray per light</figcaption>
+			</td>
+		  </tr>
+		  <tr>
+			<td>
+			  <img src="part3_visual/CBbunny_l16_s1.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 16 ray per light</figcaption>
+			</td>
+			<td>
+			  <img src="part3_visual/CBbunny_l64_s1.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBbunny.dae</code>  sampled with 64 ray per light</figcaption>
 			</td>
 		  </tr>
 		</table>
 	</div>
 
+	<h3>Compare uniform hemisphere sampling and light sampling</h3>
+	<p>Given the same number of sample taken per pixel per light, important sample over light source create "smoother" result compare with uniform sample over hemisphere. This is because when sampling over hemisphere, lots of the sample ray do not hit a light source, which causes high variance in each sample result and lead to noisy rendered output. When sample over light source, we're guarenteey the ray would hit light source if there is no intersection in between</p>
 
 	<h2 align="middle">Part 4: Global Illumination</h2>
+	<h3>Implementation of indirect lighting funciton</h3>
+	<ol>
+		<li>The implementation mostly follows the pseudocode given in lecture slides</li>
+		<li>Given an input ray <code>w_out</code> and its intersection hit point <code>hit_p</code> in scene</li>
+		<li>First, compute one bounce light at the hit point. This is the direct lightning in part 3</li>
+		<li>Then randomly sample a <code>w_in</code> location to find the <code>next</code> hit point in the scene. If there is no hit point in the scene, return the one bounce value computed in (3)</li>
+		<li>If the current ray is first time interest with any object in scene ( <code>r.depth == max_ray_depth</code> ) and <code>max_ray_depth > 1</code>, continue recursion into the scene with ray origin at <code>hit_p</code> and direction equal <code>w_in.</code></li>
+		<li>Else if <code>current ray depth > 1</code> ( ray can still recurse ) and Russian roulette random sample decide to continue recursion, continue recursion into the scene with ray origin at <code>hit_p</code> and direction equal <code>w_in</code>.</li>
+		<li>In the <code>est_radiance_global_illumination()</code> function, if the ray depth equal zero, Only apply zero bounce radiance. </li>
+	</ol>
+
+	<h3>Global Illumination render result with 1024 sampler per pixels</h3>
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part4_visual/result_1024/bench_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/bench.dae</code>render with 1024 sample per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/result_1024/blob_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>sky/blob.dae</code>render with 1024 sample per pixel</figcaption>
+			  </td>
+		  </tr>
+
+		  <tr>
+			<td>
+			  <img src="part4_visual/result_1024/bunny_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/bunny.dae</code>render with 1024 sample per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/result_1024/CBbunny_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>sky/CBbunny.dae</code>render with 1024 sample per pixel</figcaption>
+			  </td>
+		  </tr>
+
+		  <tr>
+			<td>
+			  <img src="part4_visual/result_1024/CBempty_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/CBempty.dae</code>render with 1024 sample per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/result_1024/CBspheres_lambertian_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>sky/CBspheres_lambertian.dae</code>render with 1024 sample per pixel</figcaption>
+			  </td>
+		  </tr>
+
+		  <tr>
+			<td>
+			  <img src="part4_visual/result_1024/wall-e_m5_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>sky/wall-e.dae</code>render with 1024 sample per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/result_1024/dragon_m5_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>sky/dragon.dae</code>render with 1024 sample per pixel</figcaption>
+			  </td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Compare render with direct illumination and only indirect illumination</h3>
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part4_visual/direct_indirect/CBbunny_m5_s1024_l16_one_bounce.png" align="middle" width="500px"/>
+			  <figcaption align="middle">One bounce (direct illumination) of <code>\sky\CBbunny.dae</code> render result</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/direct_indirect/CBbunny_m5_s1024_l16_at_least_one_bounce.png" align="middle" width="500px"/>
+				<figcaption align="middle">More than one bounce (indirect illumination) of <code>\sky\CBbunny.dae</code> render result</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Different max ray depth for CBbunny.dae</h3>
+	<p>With the max ray depth increase, the scene become brighter</p>
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part4_visual/var_max_ray_depth/CBbunny_m0_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>\sky\CBbunny.dae</code> with max ray depth 0</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/var_max_ray_depth/CBbunny_m1_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with max ray depth 1</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<td>
+			  <img src="part4_visual/var_max_ray_depth/CBbunny_m2_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>\sky\CBbunny.dae</code> with max ray depth 2</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/var_max_ray_depth/CBbunny_m3_s1024_l16.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with max ray depth 3</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<td>
+			  <img src="part4_visual/var_max_ray_depth/CBbunny_m100_s1024_l16.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>\sky\CBbunny.dae</code> with max ray depth 100</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Various sampler per pixel with 4 light ray</h3>
+	<p>With the number of sampler per pixel increase, render result noise decrease</p>
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s1_l4.png" align="middle" width="500px"/>
+			  <figcaption align="middle"><code>\sky\CBbunny.dae</code> with 1 sampler per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s2_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 2 sampler per pixel</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s4_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 4 sampler per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s1_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 8 sampler per pixel</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s16_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 16 sampler per pixel</figcaption>
+			</td>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s64_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 64 sampler per pixel</figcaption>
+			</td>
+		  </tr>
+
+		  <tr>
+			<td>
+				<img src="part4_visual/var_sample_per_pixel/CBbunny_m5_s1024_l4.png" align="middle" width="500px"/>
+				<figcaption align="middle"><code>\sky\CBbunny.dae</code> with 1024 sampler per pixel</figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
 
 	<h2 align="middle">Part 5: Adaptive Sampling</h2>
 
