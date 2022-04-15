@@ -1,7 +1,607 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 4 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <style>
+    body {
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+  </style>
+  <title>CS 184 Cloth Simulator</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+
+<body>
+
+	<h1 align="middle">CS 284: Computer Graphics and Imaging, Spring 2022</h1>
+	<h1 align="middle">Project 4: Cloth Simulator</h1>
+	<h2 align="middle">Xiao Song (xiaosx@berkeley.edu), Haohua Lyu (haohua@berkeley.edu)</h2>
+
+	<br><br>
+
+	<div>
+
+	<h2 align="middle">Overview</h2>
+
+	<p>Cloth simulation is a vital and challenging application of computer graphics techniques. In this project, we implemented a real-time cloth simulation using masses and springs, handled movements and collisions, and applied different shaders. In the end, we are able to render some realistic cloth effects.</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part1/all.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 1: <code>\scene\pinned2.json</code> with all constraints. </figcaption>
+			</td>
+			<td>
+				<img src="part2/ks5000_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 2: <code>\scene\pinned2.json</code> at the final state, with all default settings. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part3/ks5000.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 3: <code>\scene\sphere.json</code> at the final state, with all default settings. </figcaption>
+			</td>
+			<td>
+				<img src="part4/d_2.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 4: <code>\scene\selfCollision.json</code> in the middle of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5/all.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 5: <code>\scene\sphere.json</code> with full Blinn-Phong shading. </figcaption>
+			</td>
+			<td>
+				<img src="part5/mirror_c.png" align="middle" width="500px"/>
+				<figcaption align="middle"> Part 5: <code>\scene\sphere.json</code> with environment mapped reflection. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h2 align="middle">Part 1: Masses and Springs</h2>
+
+	<h3>Implementation</h3>
+	<p>
+		A simple cloth model consists of point masses and springs, where a sheet of cloth is evenly divided into a grid of point masses connected by springs between them. The spread of the point masses is determined by the orientation of the cloth; they spread over the <code>xz</code> plane with fixed  <code>y = 1</code> if the orientation is <code>VERTICAL</code>, and the  <code>xy</code> plane with a random <code>z</code> between \(\pm \frac{1}{1000}\) if the orientation is <code>HORIZONTAL</code>. The masses, represented in <code>Vector3D</code>, are pushed into the <code>point_masses</code> vector in a row-major (x-axis) order, with <code>pinned</code> set to true if it is in the cloth's <code>pinned</code> vector.
+	</p>
+	<p>
+		With the masses now placed, we add springs between them, representing three types of constraints between the point masses. <code>STRUCTURAL</code> constraints exist between a point mass and the point mass to its left as well as the point mass above it. <code>SHEARING</code> constraints exist between a point mass and the point mass to its diagonal upper left as well as the point mass to its diagonal upper right. <code>BENDING</code> constraints exist between a point mass and the point mass two away to its left as well as the point mass two above it. If a constraint exists (i.e., not out of bounds), we add it to the <code>springs</code> vector with pointers to the point masses.
+	</p>
+
+	<h3>Results</h3>
+
+	<p>
+		We show the resulting <code>scene/pinned2.json</code> with a view without all shearing constraints, with only shearing constraints, and with all constraints. 
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part1/no_shearing.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> without all shearing constraints (showing structural/bending constraints). </figcaption>
+			</td>
+			<td>
+				<img src="part1/shearing.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with only shearing constraints (no structural/bending constraints). </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part1/all.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with all constraints. </figcaption>
+			</td>
+			<td>
+				<img src="part1/all_2.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> from another angle. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h2 align="middle">Part 2: Simulation via Numerical Integration</h2>
+
+	<h3>Implementation</h3>
+	<p>
+		In the <code>Cloth:simulate</code> method, we first compute the total force on each point mass. This is done separately for external forces and spring correction forces. For external forces, we use <code>std::accumulate</code> to sum all external acceleration and multiply by the mass of each point mass (by Newton's 2nd Law). Then, for each enabled spring, we use Hooke's Law \(F_s = k_s (\lVert p_a - p_b \rVert - l)\) to compute the force on the two end masses. We multiply an additional \(0.2\) for bending constraints to account for their weakness. 
+	</p>
+	<p>
+		We use Verlet integration to compute new point mass positions with the computed force. That is, we use the last position \(x_{t-dt}\), the current position \(x_t\), and the acceleration \(a_t = F_{total} / m\) to calculate next position \(x_{t+dt} = x_t + (1 - d) (x_t - x_{t-dt}) + a_t d_t^2\). Here, \(d\) is the damping term ranging from 0 to 1, which could be set in the GUI. We move the point masses according to these new positions, as long as they are unpinned. 
+	</p>
+	<p>
+		Finally, we constrain the position update to ensure that the spring's length is at most 10% greater than its rest length. We use the technique from the <a href="https://www.cs.rpi.edu/~cutler/classes/advancedgraphics/S14/papers/provot_cloth_simulation_96.pdf">SIGGRAPH 1995 Provot paper</a>. For two unpinned masses, we divide the unwanted length by half and move the two masses toward each other by half distance. If one of the masses is pinned, move the other by the entire additional distance.
+	</p>
+
+	<h3>Experiments</h3>
+
+	<p>
+		We use <code>scene/pinned2.json</code> to experiment with different parameters for simulation. 
+	</p>
+
+	<h4>Spring Constant</h4>
+
+	<p>
+		First, we change the spring constant <code>ks</code> to observe changes on the cloth. Mathematically, <code>ks</code> determines the spring correction force through Hooke's Law; hence, a larger <code>ks</code> will “tie” the cloth closer, making it stiffer. A smaller <code>ks</code>, on the other hand, would lead to a loose cloth as the correction force is more likely to be overcome by external forces. This can be observed in our experiment results. The first two images show the cloth in the middle and the end of the simulation with the default <code>ks = 5000</code>, with some visible wrinkle and deformation due to gravity. In the next two images, when setting <code>ks = 100000</code>, we can see that the cloth is much stiffer; it is almost flat when falling and exhibits only one fold after falling. The diagonal wrinkle visible on the default <code>ks = 5000</code> setting also disappears in this case. On the other hand, when <code>ks = 50</code>, the cloth appears to be looser; deformation is visible early in the simulation, and more wrinkles show up in the end. The bottom half of the cloth is also more stretched out compared to the default setting.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part2/ks5000_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with default <code>ks = 5000</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/ks5000_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with default <code>ks = 5000</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="part2/ks100000_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>ks = 100000</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/ks100000_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>ks = 100000</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="part2/ks50_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>ks = 50</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/ks50_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>ks = 50</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h4>Density</h4>
+
+	<p>
+		Second, we experiment with the density of the cloth. Mathematically, the density determines the mass of each point mass; hence, a larger density leads to a larger external force, mostly gravitational force. This makes overcoming the spring correction force easier and leads to opposite effects. This is indeed observed in our experiments. The first two images show the cloth in the middle and the end of the simulation with the default density of 15; we can see the same wrinkle and deformation as before. When setting the density to 2, we can see that since the mass is small, the default spring correction force is large enough to make the cloth stiff, similar to what we have for setting <code>ks = 100000</code>. On the other hand, if we set the density to 1000, the large external force would overcome the spring correction force and achieve the effects of having <code>ks = 50</code>, making the cloth look loose and stretched.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part2/ks5000_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with default <code>density = 15</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/ks5000_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with default <code>density = 15</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="part2/rho2_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>density = 2</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/rho2_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>density = 2</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="part2/rho1000_mid.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>density = 1000</code>, in the middle of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part2/rho1000_end.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>density = 1000</code>, at the end of simulation. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h4>Damping</h4>
+
+	<p>
+		Finally, we experiment with the damping term. This term acts as a viscous drag on the motion; it does not change the final state but impacts the process of reaching equilibrium. With the default damping term of 0.2, the cloth smoothly falls to the final state with little oscillation. Decreasing the value will make the system underdamped, where the cloth oscillates back and forth before stopping at the end state. Alternatively, increasing the damping term will make the system overdamped, making the cloth move much more slowly toward equilibrium. 
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part2/d003.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>damping = 0.03</code>, in the middle of simulation. The cloth oscillates back and forth before stopping at equilibrium.</figcaption>
+			</td>
+			<td>
+				<img src="part2/d086.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned2.json</code> with <code>damping = 0.86</code>, in the middle of simulation. The cloth does not oscillate and falls slowly to equilibrium.</figcaption>
+			  </td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Results</h3>
+
+	<p>
+		We show the resulting <code>scene/pinned4.json</code> in its final state, with the default parameters. 
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+			  <img src="part2/pinned4_1.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned4.json</code> at the final state. </figcaption>
+			</td>
+			<td>
+				<img src="part2/pinned4_2.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned4.json</code> at the final state. </figcaption>
+			  </td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+			  <img src="part2/pinned4_3.png" align="middle" width="500px"/>
+			  <figcaption align="middle"> <code>\scene\pinned4.json</code> at the final state. </figcaption>
+			</td>
+			<td>
+				<img src="part2/pinned4_4.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\pinned4.json</code> at the final state. </figcaption>
+			  </td>
+		  </tr>
+		</table>
+	</div>
+
+
+	<h2 align="middle">Part 3: Handling collisions with other objects</h2>
+
+	<h3>Implementation</h3>
+
+	<p>
+		To enable collisions with other objects like spheres and planes, we implemented the <code>Sphere::collide</code> and <code>Plane::collide</code> functions. While details differ, the general approach to handling collisions is similar. First, we determine if the point mass intersects or is inside the object; inside the sphere surface in the sphere case, and on the other side of the plane in the plane case. If true, we determine the tangent point by extending the path between the point mass and the object and finding the intersection point. Then, we compute the correction vector from the tangent point to the point mass's last position. In the plane case, we need to apply an additional small <code>SURFACE_OFFSET</code>. Finally, we reset the point mass's current position to be the last position adjusted by the correction vector, factored by a friction term \((1 - f)\). After implementing these functions, we modify <code>Cloth::simulate</code> to check all point masses against all collision objects.
+	</p>
+
+	<h3>Results</h3>
+
+	<h4>Sphere</h4>
+
+	<p>
+		We show the resulting shaded <code>scene/sphere.json</code> in its final state, with the default <code>ks = 5000</code>, <code>ks = 500</code>, and <code>ks = 50000</code>. As discussed earlier, changing this spring constant is equivalent to changing the stiffness of the cloth. It is obvious that, compared to the default setting, <code>ks = 50000</code> shows a sniffer cloth, with large space between the top-left/right of the sphere and the cloth. On the other hand, when <code>ks = 500</code>, the loose cloth fits well with the sphere and is stretched much longer compared to the default one.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part3/ks5000.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> at the final state, with the default <code>ks = 5000</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part3/ks50000.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> at the final state, with <code>ks = 50000</code>. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part3/ks500.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> at the final state, with <code>ks = 500</code>. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h4>Plane</h4>
+
+	<p>
+		We also show the resulting shaded <code>scene/plane.json</code> in its final state below. 
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<img src="part3/plane.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\plane.json</code> at the final state, with default settings. </figcaption>
+		  </tr>
+		</table>
+	</div>
+
+	<h2 align="middle">Part 4: Handling self-collisions</h2>
+
+	<h3>Implementation</h3>
+
+	<p>
+		To achieve cloth self-collision, we implemented spatial hashing to store point masses in a 3D box to one uniquely hashed vector; this vector is mapped to a unique float in the resulting hash table. We select <code>w = 3 * width / num_width_points</code>, <code>h = 3 * height / num_height_points</code>, <code>t = max(w, h)</code>, and <code>base = int(max( num_width_points, num_height_points ) + 2 ) / 3</code>. We then calculate the unique float with \(\text{floor}(x / w) * \text{base}^2 +\text{floor}(y / h) * \text{base} + \text{floor}(z / t) \). As a result, point masses in the same 3D box will be added to the same vector in the final hash map. Once we build the map, we loop through each point mass and find neighboring point masses in the corresponding vector. We check the distance between the two is smaller than \(2 * \text{thickness}\) and apply a correction vector if true.
+	</p>
+
+	<h3>Results</h3>
+
+	<p>
+		We show the resulting <code>scene/selfCollision.json</code>, with the default <code>ks = 5000</code> and a density of 15. The following images show the shape of the cloth against different timesteps.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part4/d_1.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> at the beginning of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part4/d_2.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> in the middle of simulation. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part4/d_3.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> toward the end of simulation. </figcaption>
+			</td>
+			<td>
+				<img src="part4/d_4.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> at the resting state. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h4>Spring Constant</h4>
+
+	<p>
+		Now we experiment on <code>ks = 500</code> and <code>ks = 50000</code>. As discussed earlier, changing this spring constant is equivalent to changing the stiffness of the cloth. Compared to the default setting, <code>ks = 50000</code> shows a sniffer cloth, and the strong spring correction force pushes the cloth to the side when folding, leading to fewer layers and wider folds. On the other hand, when <code>ks = 500</code>, the loose cloth falls vertically, creating more layers of thinner folds during the simulation.  
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part4/ks50000.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> at the middle of simulation, with <code>ks = 50000</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part4/ks500.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> at the middle of simulation, with <code>ks = 500</code>. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h4>Density</h4>
+
+	<p>
+		Also, as discussed earlier, as we use the density to calculate the external (mainly gravitational) forces, we would observe the opposite effects as we change density. Compared to the default setting, a density of 2 shows a sniffer cloth, since the external force is now smaller and the spring correction force dominates. This creates fewer layers and wider folds, similar to the results of having <code>ks = 50000</code>. On the other hand, a density of 100 creates a large gravitational force, pulling the cloth vertically and creating more thinner folds like <code>ks = 500</code>.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part4/den2.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code> at the middle of simulation, with <code>density = 2</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part4/den100.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\selfCollision.json</code>, with <code>density = 100</code>. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h2 align="middle">Part 5: Shaders</h2>
+
+	<h3>Shader Program</h3>
+
+	<p>
+		A shader program is small, isolated program designed to run parts of the graphics pipeline on the GPU. They take some input, mostly at the individual vertex/pixel level, and output a single 4-dimensional vector. This design allows massive parallelism utilizing the GPU hardware structure. In this project, two kinds of shaders are used: vertex shaders and fragment shaders. Vertex shaders perform mathematical operations on vertices, e.g., writing position and normal values from the model space to the world space. In the project, it also outputs the final camera space location of the vertices. Then, we use the fragment shaders to process the rasterized fragments/pixels, using the corresponding barycentric interpolation of vertex shader outputs. From there, we can compute the color and lighting of each point and output the final color as a 4-dimensional vector. 
+	</p>
+
+	<h3>Blinn-Phong shading model</h3>
+
+	<p>
+		The Blinn-Phong shading model is a mathematical model aiming to match the perceptual observations of our environment. It consists of three kinds of shading: diffuse, specular, and ambient. The diffuse shading is the shading independent of the view direction; it is the diffusely reflected light following the angle between the light source and the surface normal. It gives a matte appearance to the object. On the other hand, specular shading is the shading dependent of the view direction; it accounts for the mirror-like reflection caused by a half vector close to the normal. This gives the shining “dots” on the surface. Finally, ambient shading is the shading that depends on nothing; it adds a constant color to account for the environmental light and fill in dark shadows.
+	</p>
+
+	<p>
+		We show the resulting <code>scene/sphere.json</code> with the Blinn-Phong model, with only ambient component, only diffuse component, only specular component, and all three components combined.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/ambient.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with only ambient shading. </figcaption>
+			</td>
+			<td>
+				<img src="part5/diffuse.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with only diffuse shading. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5/specular.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with only specular shading. </figcaption>
+			</td>
+			<td>
+				<img src="part5/all.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with full Blinn-Phong shading. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Texture mapping shader</h3>
+
+	<p>
+		We show the resulting <code>scene/sphere.json</code> with texture mapping, replacing the default texture with a custom texture image.  
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/texture_s.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with custom texture image. </figcaption>
+			</td>
+			<td>
+				<img src="part5/texture_c.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with custom texture image. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Bump Mapping and Displacement Mapping</h3>
+
+	<p>
+		We show the resulting <code>scene/sphere.json</code> with bump mapping and displacement mapping, replacing the default texture with <code>texture/texture_3.png</code>.
+	</p>
+
+	<p>
+		We can observe that in bump mapping, the color gives an illusion of bumping shapes on the sphere and cloth with the new normal scaled by texture; however, it's still easy to tell that both objects have smooth surfaces. However, in displacement mapping, the actual surface has been changed according to the texture details. One can easily tell that the sphere is no longer round and smooth by looking at the top/bottom right corner. After falling, the cloth is also rising up against the sphere's surface, unlike the smooth fit on the bump mapping case.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/bump_s.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping. </figcaption>
+			</td>
+			<td>
+				<img src="part5/bump_c.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5/dis_s.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping. </figcaption>
+			</td>
+			<td>
+				<img src="part5/dis_c.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<p>
+		We change the sphere mesh's coarseness to see how the two shading change. In the bump mapping case, it is quite hard to tell the difference, as the actual mesh is not changed in the process. The sphere gets a bit smoother after increasing the resolution as the number of faces increases; nonetheless, the change is hard to be noticed.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/bump_s_16.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping and a coarseness of <code>-o 16 -a 16</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part5/bump_c_16.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping and a coarseness of <code>-o 16 -a 16</code>. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5/bump_s_128.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping and a coarseness of <code>-o 128 -a 128</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part5/bump_c_128.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with bump mapping and a coarseness of <code>-o 128 -a 128</code>. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<p>
+		For displacement mapping, changes are obvious. Since the vertices will actually change position, more vertices on the sphere create more but smaller features on the surface. This actually makes the sphere look more coarse although the resolution increases, given that smaller faces now point in different directions.
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/dis_s_16.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping and a coarseness of <code>-o 16 -a 16</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part5/dis_c_16.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping and a coarseness of <code>-o 16 -a 16</code>. </figcaption>
+			</td>
+		  </tr>
+		  <br>
+		  <tr>
+			<td>
+				<img src="part5/dis_s_128.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping and a coarseness of <code>-o 128 -a 128</code>. </figcaption>
+			</td>
+			<td>
+				<img src="part5/dis_c_128.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with displacement mapping and a coarseness of <code>-o 128 -a 128</code>. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+	<h3>Environment-mapped Reflections</h3>
+
+	<p>
+		We show the resulting <code>scene/sphere.json</code> with environment mapped reflection, resembling a mirror-like effect.  
+	</p>
+
+	<div align="middle">
+		<table style="width=100%">
+		  <tr>
+			<td>
+				<img src="part5/mirror_s.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with environment mapped reflection, creating a mirror-like effect. </figcaption>
+			</td>
+			<td>
+				<img src="part5/mirror_c.png" align="middle" width="500px"/>
+				<figcaption align="middle"> <code>\scene\sphere.json</code> with environment mapped reflection, creating a mirror-like effect. </figcaption>
+			</td>
+		  </tr>
+		</table>
+	</div>
+
+
+	<h3 align="middle">Appendix</h3>
+
+	<a href="https://cal-cs184-student.github.io/sp22-project-webpages-Haohua-Lyu-and-Xiao-Song/">Link to project webpage</a>
+
+</body>
+
 </html>
